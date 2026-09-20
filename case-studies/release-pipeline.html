@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Release pipelines on a small team — Aneesh Satheesh</title>
+<meta name="description" content="Case study: putting every service behind a Jenkins or GitHub Actions pipeline so deployment stopped depending on who remembered the steps.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230e1418'/%3E%3Cpath d='M7 11l5 5-5 5' fill='none' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M15 21h10' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .dg-box  { fill: var(--surface-2); stroke: var(--line); stroke-width: 1; rx: 3; }
+  .dg-txt  { fill: var(--text-dim); font-family: var(--mono); font-size: 12px; }
+  .dg-lane { fill: var(--sand); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; font-weight: 600; }
+  .dg-line { stroke: var(--text-mute); stroke-width: 1.2; fill: none; }
+  .dg-stop { stroke: var(--sand-dim); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+  .dg-note { fill: var(--text-mute); font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="nav-id" href="../index.html">Aneesh Satheesh <span>/ infra</span></a>
+    <div class="nav-links">
+      <a href="../index.html#experience">Experience</a>
+      <a href="../index.html#skills">Skills</a>
+      <a href="../index.html#projects">Projects</a>
+      <a href="../index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<main id="main">
+
+<section class="hero cs-hero">
+  <div class="wrap">
+    <a class="back" href="../index.html#projects">&larr; All projects</a>
+    <p class="eyebrow">Case study 02 &middot; CI/CD</p>
+    <h1>Making deployment a pipeline run instead of a remembered procedure</h1>
+    <p class="lede">
+      Every service on the platform shipped through a build that produced a tagged image and a
+      deployment that applied it. The interesting part was not the tooling; it was deciding what
+      not to rewrite.
+    </p>
+
+    <div class="cs-facts">
+      <div><b>Where</b><span>Rail Tech Inc.</span></div>
+      <div><b>When</b><span>2025 &ndash; 2026</span></div>
+      <div><b>Scope</b><span>Every service on the platform</span></div>
+      <div><b>My role</b><span>Built and maintained the pipelines</span></div>
+      <div><b>Stack</b><span>Jenkins, GitHub Actions, Docker, kubectl, Git</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="cs-body">
+  <div class="wrap">
+
+    <div class="cs-block">
+      <h2>Problem</h2>
+      <p>
+        Releases depended on who knew the steps for that service. Some had a Jenkins job, some had
+        a script, some had an engineer with a terminal and a good memory. Two people deploying the
+        same service did not necessarily do the same thing.
+      </p>
+      <p>
+        The practical costs showed up in two places. Rolling back meant reconstructing what had
+        been running before, because there was no single record tying a running version to a
+        commit. And onboarding anyone onto a service meant transferring the deployment procedure
+        out of someone's head, which is slow and lossy.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>Environment</h2>
+      <ul>
+        <li><strong>A production AI platform</strong> on AWS and GCP, roughly 20 hosts, with workloads moving onto EKS and Docker as traffic outgrew single hosts.</li>
+        <li><strong>An existing Jenkins installation</strong> already carrying multibranch builds for the older services.</li>
+        <li><strong>Newer repositories on GitHub</strong>, where the team was already reviewing code.</li>
+        <li><strong>A small team</strong> with no dedicated build engineer, so whatever I built I also had to keep running.</li>
+      </ul>
+    </div>
+
+    <div class="cs-block">
+      <h2>Constraints</h2>
+      <ul>
+        <li><strong>Do not rewrite what works.</strong> Migrating functioning Jenkins multibranch builds to another tool would have spent weeks to arrive at the same behaviour.</li>
+        <li><strong>One artifact type.</strong> Whatever the build system, the output had to be the same kind of thing, or deployment would fragment again.</li>
+        <li><strong>Deployable by someone who is not me.</strong> The point of the exercise was removing the dependency on individual knowledge.</li>
+        <li><strong>Secrets stay out of repositories.</strong> Non-negotiable, and easy to get wrong when you are moving fast.</li>
+      </ul>
+      <div class="callout">
+        <b>The call I made</b>
+        Two CI systems is not ideal and I would not design it that way from scratch. But the cost
+        of standardising was real and the benefit was cosmetic: both paths already produced the
+        same artifact and deployed the same way. I standardised the artifact and the deployment
+        step, and left the build systems where they were.
+      </div>
+    </div>
+
+    <div class="cs-block cs-wide">
+      <h2>Architecture</h2>
+
+      <div class="diagram-box" style="margin-top:20px">
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 880 320" role="img" aria-labelledby="rpt rpd">
+            <title id="rpt">Release pipeline architecture</title>
+            <desc id="rpd">A commit to a branch triggers either Jenkins for older services or GitHub Actions for newer repositories. Both run build and test, and a passing build produces a tagged Docker image pushed to a registry. Deployment applies Kubernetes manifests with kubectl to the target environment, after which Prometheus and Grafana observe the running service. A failing test stops the pipeline before an image is produced.</desc>
+            <defs>
+              <marker id="rp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" style="fill: var(--text-mute)"/>
+              </marker>
+              <marker id="rps" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" style="fill: var(--sand-dim)"/>
+              </marker>
+            </defs>
+
+            <text class="dg-lane" x="0" y="40">COMMIT</text>
+            <rect class="dg-box" x="100" y="18" width="170" height="40"/>
+            <text class="dg-txt" x="185" y="43" text-anchor="middle">push to branch</text>
+
+            <path class="dg-line" d="M185 58 V78 H240 V96" marker-end="url(#rp)"/>
+            <path class="dg-line" d="M185 58 V78 H560 V96" marker-end="url(#rp)"/>
+
+            <text class="dg-lane" x="0" y="122">BUILD</text>
+            <rect class="dg-box" x="150" y="100" width="180" height="40"/>
+            <text class="dg-txt" x="240" y="125" text-anchor="middle">Jenkins multibranch</text>
+            <text class="dg-note" x="150" y="156">older services</text>
+
+            <rect class="dg-box" x="470" y="100" width="180" height="40"/>
+            <text class="dg-txt" x="560" y="125" text-anchor="middle">GitHub Actions</text>
+            <text class="dg-note" x="470" y="156">newer repositories</text>
+
+            <path class="dg-line" d="M240 140 V176 H380 V194" marker-end="url(#rp)"/>
+            <path class="dg-line" d="M560 140 V176 H420 V194" marker-end="url(#rp)"/>
+
+            <text class="dg-lane" x="0" y="220">ARTIFACT</text>
+            <rect class="dg-box" x="300" y="198" width="200" height="40"/>
+            <text class="dg-txt" x="400" y="223" text-anchor="middle">build + test</text>
+
+            <path class="dg-stop" d="M500 218 H636" marker-end="url(#rps)"/>
+            <text class="dg-note" x="512" y="212">test fails</text>
+            <rect class="dg-box" x="640" y="198" width="190" height="40" style="stroke: var(--sand-dim)"/>
+            <text class="dg-txt" x="735" y="223" text-anchor="middle">stop, no image</text>
+
+            <path class="dg-line" d="M300 218 H180 V254" marker-end="url(#rp)"/>
+
+            <text class="dg-lane" x="0" y="286">SHIP</text>
+            <rect class="dg-box" x="100" y="258" width="180" height="40"/>
+            <text class="dg-txt" x="190" y="283" text-anchor="middle">tagged image</text>
+            <path class="dg-line" d="M280 278 H316" marker-end="url(#rp)"/>
+            <rect class="dg-box" x="320" y="258" width="200" height="40"/>
+            <text class="dg-txt" x="420" y="283" text-anchor="middle">kubectl apply</text>
+            <path class="dg-line" d="M520 278 H556" marker-end="url(#rp)"/>
+            <rect class="dg-box" x="560" y="258" width="270" height="40"/>
+            <text class="dg-txt" x="695" y="283" text-anchor="middle">running service &middot; Prometheus + Grafana</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="cs-block">
+      <h2>Implementation</h2>
+      <ul>
+        <li><strong>One trigger model.</strong> A push to the tracked branch starts the build. No manual job runs as the normal path, because a manual path is where procedures start diverging again.</li>
+        <li><strong>Build and test in the same run.</strong> A failing test stops the pipeline before an image exists, so a broken build cannot be deployed by mistake.</li>
+        <li><strong>Tagged images, not "latest".</strong> Each build produces an image identified by its commit, which is what makes "what is running in production right now" an answerable question and a rollback a matter of applying a previous tag.</li>
+        <li><strong>Deployment applies manifests.</strong> Kubernetes manifests applied with kubectl, kept alongside the service rather than in someone's shell history.</li>
+        <li><strong>Jenkinsfile in the repository</strong> for the Jenkins-side services, so the pipeline definition is versioned with the code it builds instead of living in the Jenkins UI.</li>
+      </ul>
+      <pre class="term"><span class="c"># the shape of it, per service</span>
+push to branch
+  <span class="k">&rarr;</span> build + unit tests        <span class="c"># fails here, nothing ships</span>
+  <span class="k">&rarr;</span> docker build, tag by commit
+  <span class="k">&rarr;</span> push to registry
+  <span class="k">&rarr;</span> kubectl apply manifests
+  <span class="k">&rarr;</span> watch rollout, alert on failure</pre>
+    </div>
+
+    <div class="cs-block">
+      <h2>Security</h2>
+      <ul>
+        <li><strong>Secrets injected at run time</strong> from the CI system's own credential store, never committed and never baked into an image.</li>
+        <li><strong>Scoped deploy credentials.</strong> The pipeline's access is limited to what deploying requires, rather than reusing an administrative identity because it was convenient.</li>
+        <li><strong>Registry access controlled</strong>, so images are pulled by the cluster rather than being publicly readable.</li>
+        <li><strong>Review before merge</strong> as the gate. The pipeline enforces that what deploys is what was reviewed, which only holds if the branch is protected.</li>
+      </ul>
+    </div>
+
+    <div class="cs-block">
+      <h2>Monitoring</h2>
+      <p>
+        A deployment is not finished when the pipeline goes green. Rollout status is watched after
+        apply, and the service's own metrics in Prometheus and dashboards in Grafana are what tell
+        us whether the new version is actually healthy rather than merely started. A failed build
+        or failed rollout raises an alert on the same path as any production alert, because a
+        build system nobody notices failing quietly stops being a control.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>Result</h2>
+      <ul>
+        <li><strong>Deployment became a pipeline run</strong> rather than a set of remembered steps, which was the whole point.</li>
+        <li><strong>Every release has a build record attached to a commit</strong>, so what is running and what changed are both answerable.</li>
+        <li><strong>Rollback is applying a previous tag</strong> instead of reconstructing a previous state.</li>
+        <li><strong>A broken build cannot reach production</strong>, because the artifact is never produced.</li>
+      </ul>
+      <p style="margin-top:14px">
+        I did not measure deployment time before and after, so I am not going to claim a
+        percentage improvement. The change that mattered was in who could deploy and how
+        repeatable it was, not in the clock.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>What I would do differently</h2>
+      <p>
+        I would put the deployment step behind a proper environment promotion rather than letting
+        the same pipeline shape serve every target, and I would add an automated rollback trigger
+        on failed health checks instead of relying on someone watching the rollout. I would also
+        consolidate onto one CI system eventually, but as a planned migration with a reason, not
+        as a tidiness exercise in the middle of shipping.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<section class="cs-next">
+  <div class="wrap">
+    <a class="cs-link" href="incident-response.html">Next: LLM-assisted incident triage &rarr;</a>
+    <a class="back" style="margin:0" href="../index.html#projects">&larr; Back to all projects</a>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>Aneesh Satheesh &middot; DevOps &amp; Infrastructure Engineer</span>
+    <span><a href="mailto:anzsat21@gmail.com">anzsat21@gmail.com</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
