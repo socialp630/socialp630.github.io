@@ -1001,13 +1001,23 @@
         <p>An annotated <code>my.cnf</code>, key buffer, query cache, table and thread cache and InnoDB tuning notes, slow query log and <code>mysqlcheck</code> maintenance, backup and slow query scripts.</p>
         <p class="why">Demonstrates: database tuning from the operations side, and finding the query that is actually causing the problem.</p>
       </div>
-
-      <div class="repo repo-soon">
-        <h3>windows &middot; ansible &middot; jenkins</h3>
-        <p>PowerShell server health, disk and patch reporting, AD auditing and an MSSQL migration note; the Ansible baseline, nginx, patching and user playbooks; Jenkins multibranch setup, a Jenkinsfile and the Ansistrano deploy flow.</p>
-        <p class="why">From the 2016&ndash;2020 work. In progress, published as each one is finished.</p>
+      <div class="repo">
+        <h3><a href="https://github.com/socialp630/windows" target="_blank" rel="noopener">windows</a></h3>
+        <p>PowerShell for Windows Server operations: server health, disk reporting, patch status and event log export, stale Active Directory account auditing and bulk user creation from CSV, plus an MSSQL downgrade migration note.</p>
+        <p class="why">Demonstrates: the Windows half of a mixed estate, Active Directory hygiene, and getting data off a Windows box in a form somebody can act on.</p>
       </div>
 
+      <div class="repo">
+        <h3><a href="https://github.com/socialp630/ansible" target="_blank" rel="noopener">ansible</a></h3>
+        <p>A baseline playbook plus nginx, patching and user playbooks, an inventory example, <code>ansible.cfg</code>, and notes on ad-hoc commands and vault.</p>
+        <p class="why">Demonstrates: configuration management as I actually ran it, the baseline that stops hosts drifting apart, and keeping secrets out of the playbooks.</p>
+      </div>
+      <div class="repo repo-soon">
+        <h3>jenkins</h3>
+        <p>Multibranch setup, a Jenkinsfile, and the Ansistrano deploy flow with the release directory and symlink-swap layout, plus the branching and release plan that went with it.</p>
+        <p class="why">From the 2019 work at Armia. In progress.</p>
+      </div>
+      
       <div class="repo repo-soon">
         <h3>docker &middot; kubernetes &middot; monitoring</h3>
         <p>Dockerfiles and Compose stacks from real work; Kubernetes and observability material from current lab work, clearly marked as such.</p>
