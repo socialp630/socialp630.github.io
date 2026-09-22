@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Aneesh Satheesh — DevOps &amp; Infrastructure Engineer</title>
-<meta name="description" content="DevOps and Infrastructure Engineer with 5 years across Linux and Windows administration, hosting-provider production support, and AWS/GCP infrastructure on Kubernetes. Ansible, Jenkins, Docker, Python, Bash.">
+<meta name="description" content="DevOps and Infrastructure Engineer with 5 years across Linux and Windows administration, hosting-provider production support, AWS, and a containerised AI platform on GCP. Ansible, Jenkins, Docker, Traefik, Python, Bash.">
 <meta name="author" content="Aneesh Satheesh">
 <meta property="og:type" content="profile">
 <meta property="og:title" content="Aneesh Satheesh — DevOps &amp; Infrastructure Engineer">
-<meta property="og:description" content="Five years running Linux and Windows infrastructure, from hosting-provider production support to AWS and GCP platforms on Kubernetes.">
+<meta property="og:description" content="Five years across Linux and Windows infrastructure: hosting-provider production support, release pipelines and configuration management, and a containerised AI platform on GCP.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230e1418'/%3E%3Cpath d='M7 11l5 5-5 5' fill='none' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M15 21h10' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,10 +18,12 @@
   /* diagram-only styles, kept with the diagram */
   .dg-box   { fill: var(--surface-2); stroke: var(--line); stroke-width: 1; rx: 3; }
   .dg-txt   { fill: var(--text-dim); font-family: var(--mono); font-size: 12px; }
+  .dg-sub   { fill: var(--text-mute); font-family: var(--mono); font-size: 10.5px; }
   .dg-lane  { fill: var(--sand); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; font-weight: 600; }
   .dg-line  { stroke: var(--text-mute); stroke-width: 1.2; fill: none; }
-  .dg-feed  { stroke: var(--sand-dim); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
-  .dg-note  { fill: var(--text-mute); font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; }
+  .dg-dash  { stroke: var(--sand-dim); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+  .dg-note  { fill: var(--sand); font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; }
+  .dg-foot  { fill: var(--text-mute); font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; }
 </style>
 </head>
 <body>
@@ -34,7 +36,7 @@
     <div class="nav-links">
       <a href="#experience">Experience</a>
       <a href="#skills">Skills</a>
-      <a href="#delivery">How it fits together</a>
+      <a href="#delivery">Architecture</a>
       <a href="#projects">Projects</a>
       <a href="#troubleshooting">Troubleshooting</a>
       <a href="#credentials">Certifications</a>
@@ -52,10 +54,11 @@
     <p class="hero-role">DevOps &amp; Infrastructure Engineer</p>
 
     <p class="hero-pitch">
-      Five years running Linux and Windows infrastructure, starting in hosting-provider
-      production support and ending on <strong>AWS and GCP infrastructure for a live AI
-      platform</strong>. I came up through systems administration, so the automation I write
-      is for work I have already done by hand, on systems I was carrying the pager for.
+      Five years across Linux and Windows infrastructure: hosting-provider production support,
+      then <strong>release pipelines and configuration management</strong>, most recently running a
+      containerised AI platform on GCP. I came up through systems administration, so the
+      automation I write is for work I have already done by hand, on systems I was carrying the
+      pager for.
     </p>
 
     <div class="chips">
@@ -63,10 +66,10 @@
       <span class="chip">Windows Server</span>
       <span class="chip">AWS</span>
       <span class="chip">GCP</span>
-      <span class="chip">Kubernetes</span>
       <span class="chip">Docker</span>
       <span class="chip">Ansible</span>
       <span class="chip">Jenkins</span>
+      <span class="chip">Traefik</span>
       <span class="chip">Python</span>
       <span class="chip">Bash</span>
     </div>
@@ -111,12 +114,12 @@
         <span>Hosting production support for Hostway, Hostwinds, myhosting.com and KuwaitNet; led the L1 team at Brookwin</span>
       </div>
       <div class="stat">
-        <b>AWS + GCP</b>
-        <span>Roughly 20 servers running a production AI platform on Kubernetes and Docker</span>
+        <b>MCP in production</b>
+        <span>Built and ran a Model Context Protocol server serving Claude Desktop, Cursor and Claude Code</span>
       </div>
       <div class="stat">
         <b>On-call</b>
-        <span>Carried the production pager in every engineering role, including triage, fix and the writeup</span>
+        <span>Production rotation with out-of-hours pages at Armia: triage, fix, then the writeup</span>
       </div>
     </div>
 
@@ -127,11 +130,12 @@
         system, the web stack and the escalation process before it taught me any tooling.
       </p>
       <p class="lede">
-        At Armia I moved into systems engineering and owned patching, hardening and incident
-        response across bare-metal and cloud. At Rail Tech I ran the AWS and GCP infrastructure
-        for a production AI platform: the Ansible that patches the fleet, the Jenkins and
-        GitHub Actions pipelines that ship it, and the pager when it broke. The automation came
-        out of the operations work, not the other way round.
+        At Armia I moved into systems engineering: the patching and hardening rounds, an on-call
+        rotation with out-of-hours pages, Ansible playbooks run against real servers, and the
+        Jenkins multibranch pipeline with Ansistrano releases that took deployment out of
+        people's heads. At Rail Tech I ran the infrastructure for an AI memory platform on GCP,
+        built its MCP server, and owned the edge and authentication path in front of it. The
+        automation came out of the operations work, not the other way round.
       </p>
     </div>
   </div>
@@ -148,50 +152,35 @@
     </div>
 
     <div class="timeline">
-
       <article class="tl-item is-eng">
-        <p class="tl-when">Dec 2016 &ndash; Mar 2019 &middot; Cochin, India</p>
-        <h3 class="tl-role">System Administrator</h3>
-        <p class="tl-org">Brookwin Technologies <em>&middot; full time</em></p>
+        <p class="tl-when">Dec 2024 &ndash; Apr 2026 &middot; Remote</p>
+        <h3 class="tl-role">DevOps Engineer</h3>
+        <p class="tl-org">Rail Tech Inc. <em>&middot; full time, AI memory platform</em></p>
         <ul class="tl-body">
-          <li>Supported server and cloud infrastructure for hosting providers, including myhosting.com and Hostway.</li>
-          <li>Held 99% uptime across the systems I owned, tracked in our monitoring dashboards.</li>
-          <li>Patched and hardened Linux and Windows servers on a set rotation, including provisioning, configuration and rebuilds.</li>
-          <li>Managed Windows Server and Active Directory to L3, and deployed and ran Windows application servers.</li>
-          <li>Scripted the repetitive admin jobs so the steps did not live in anyone's head.</li>
-          <li>Led the Level 1 team, training new engineers on escalation and triage.</li>
+          <li>Ran the production infrastructure for an AI memory platform on GCP: four services under Docker Compose on a Compute Engine VM, with MongoDB, Redis and PostgreSQL behind them.</li>
+          <li>Built and operated the platform's Model Context Protocol server, supporting both the legacy SSE transport and the newer Streamable HTTP transport on the same route prefix, for Claude Desktop, Cursor and Claude Code clients.</li>
+          <li>Traced silent client disconnections to Cloudflare's roughly 100 second idle timeout on proxied connections, and fixed it with a 25 second SSE keepalive.</li>
+          <li>Owned the edge and authentication path: Cloudflare in front, Traefik for routing and Let's Encrypt TLS, and ForwardAuth bouncing every protected route to a JWT verifier before it reached an application container.</li>
+          <li>Keyed rate limiting to user ID rather than IP, because Cloudflare collapses many real users behind a handful of shared addresses.</li>
+          <li>Stood up Prometheus and Grafana for platform metrics.</li>
+          <li>Reviewed cloud spend monthly and cut idle resources, holding the bill flat as usage grew.</li>
+          <li>Fully remote role with a Toronto-based team across time zones, coordinated over Microsoft Teams and Zoom, with decisions and runbooks written down rather than held in a call.</li>
+          <li>Deploys were manual and there was no infrastructure as code. I have written up <a href="case-studies/platform-gaps.html">the gap analysis and what I would fix first</a>.</li>
         </ul>
         <div class="chips tl-tags">
-          <span class="chip">Linux</span><span class="chip">Windows Server</span><span class="chip">Active Directory</span>
-          <span class="chip">Apache</span><span class="chip">MySQL</span><span class="chip">Bash</span>
-          <span class="chip">PowerShell</span><span class="chip">monitoring</span>
+          <span class="chip">GCP</span><span class="chip">Docker</span><span class="chip">Docker Compose</span>
+          <span class="chip">Traefik</span><span class="chip">Cloudflare</span><span class="chip">MongoDB</span>
+          <span class="chip">Redis</span><span class="chip">PostgreSQL</span><span class="chip">MCP</span>
+          <span class="chip">OAuth / JWT</span><span class="chip">Prometheus</span><span class="chip">Grafana</span>
         </div>
       </article>
-
-      <article class="tl-item is-eng">
-        <p class="tl-when">Apr 2019 &ndash; Jan 2020 &middot; Kerala, India</p>
-        <h3 class="tl-role">Systems Engineer</h3>
-        <p class="tl-org">Armia Systems Ltd. <em>&middot; full time</em></p>
-        <ul class="tl-body">
-          <li>Ran Linux and Windows servers for hosting clients including KuwaitNet and Hostwinds, bare-metal and cloud both.</li>
-          <li>Owned the patching and hardening rounds, plus emergency rebuilds when a box could not be recovered in place.</li>
-          <li>On-call rotation for production: led incident response through triage, fix and recovery.</li>
-          <li>Python and Bash scripts removed about 70% of the repeat manual work, measured against the ticket queue before and after.</li>
-        </ul>
-        <div class="chips tl-tags">
-          <span class="chip">Linux</span><span class="chip">Windows Server</span><span class="chip">Ansible</span>
-          <span class="chip">Python</span><span class="chip">Bash</span><span class="chip">OSSEC</span>
-          <span class="chip">CSF</span><span class="chip">incident response</span>
-        </div>
-      </article>
-
       <article class="tl-item is-interval">
         <p class="tl-when">2020 &ndash; Dec 2024 &middot; Toronto, Canada</p>
         <h3 class="tl-role">Networking diploma, two certifications, and a customer-facing role</h3>
         <p class="tl-org">Centennial College &amp; Urban Group</p>
         <ul class="tl-body">
           <li><strong>2020 &ndash; 2022:</strong> Computer Systems Technician &ndash; Networking diploma, Centennial College, Toronto.</li>
-          <li><strong>Jan 2023 &ndash; Dec 2024:</strong> Operations Supervisor at Urban Group while completing Canadian immigration requirements. Escalation point between frontline staff, vendors and management: the same triage-and-communicate loop as production support, with the customer in the room instead of on a ticket.</li>
+          <li><strong>Jan 2023 &ndash; Dec 2024:</strong> Operations Supervisor at Urban Group. Escalation point between frontline staff, vendors and management: the same triage-and-communicate loop as production support, with the customer in the room instead of on a ticket.</li>
           <li>Passed <strong>CompTIA A+ Core 1</strong> in Nov 2023 and studied for AWS SysOps outside working hours, certifying in Feb 2025.</li>
           <li>The customer-facing years changed how I write incident updates and runbooks. Infrastructure exists so somebody can use a product, and I had two years of watching what happens at that end of it.</li>
         </ul>
@@ -200,28 +189,44 @@
           <span class="chip">AWS SysOps study</span><span class="chip">escalation management</span>
         </div>
       </article>
-
       <article class="tl-item is-eng">
-        <p class="tl-when">Dec 2024 &ndash; Apr 2026 &middot; Remote</p>
-        <h3 class="tl-role">Infrastructure &amp; Platform Engineer</h3>
-        <p class="tl-org">Rail Tech Inc. <em>&middot; full time, AI platform</em></p>
+        <p class="tl-when">Apr 2019 &ndash; Jan 2020 &middot; Kerala, India</p>
+        <h3 class="tl-role">Systems Engineer</h3>
+        <p class="tl-org">Armia Systems Ltd. <em>&middot; full time</em></p>
         <ul class="tl-body">
-          <li>Ran AWS and GCP infrastructure for a production AI platform, roughly 20 servers.</li>
-          <li>Wrote Ansible playbooks that patch and harden the fleet on a schedule, so nobody logs into servers one at a time any more.</li>
-          <li>Built the Jenkins and GitHub Actions release pipelines that ship every service.</li>
-          <li>Moved workloads onto EKS and Docker as traffic outgrew single hosts.</li>
-          <li>Wired OpenAI and Anthropic APIs into alerting to draft first-pass incident diagnoses; routine restarts and disk cleanups now clear themselves.</li>
-          <li>Carried the production pager: triage, root cause, then the writeup.</li>
-          <li>Reviewed cloud spend monthly and cut idle resources, holding the bill flat as usage grew.</li>
+          <li>Ran Linux and Windows servers for hosting clients including KuwaitNet and Hostwinds, on bare-metal and in AWS.</li>
+          <li>Built and ran a Jenkins multibranch pipeline with an Ansistrano release layout, plus the branching and release plan around it, so deploying stopped depending on who remembered the steps.</li>
+          <li>Wrote and ran Ansible playbooks against real servers for the patching and hardening rounds, replacing a per-host manual process.</li>
+          <li>Carried a production on-call rotation with out-of-hours pages: triage, fix, recovery, then the writeup.</li>
+          <li>Handled emergency rebuilds when a host could not be recovered in place.</li>
+          <li>Python and Bash scripts removed about 70% of the repeat manual work, measured against the ticket queue before and after.</li>
         </ul>
         <div class="chips tl-tags">
-          <span class="chip">AWS</span><span class="chip">GCP</span><span class="chip">Kubernetes (EKS)</span>
-          <span class="chip">Docker</span><span class="chip">Ansible</span><span class="chip">Jenkins</span>
-          <span class="chip">GitHub Actions</span><span class="chip">Terraform</span>
-          <span class="chip">Prometheus</span><span class="chip">Grafana</span>
+          <span class="chip">Linux</span><span class="chip">Windows Server</span><span class="chip">Jenkins</span>
+          <span class="chip">Ansistrano</span><span class="chip">Ansible</span><span class="chip">AWS</span>
+          <span class="chip">Python</span><span class="chip">Bash</span><span class="chip">OSSEC</span>
+          <span class="chip">CSF</span><span class="chip">on-call</span>
         </div>
       </article>
-
+      <article class="tl-item is-eng">
+        <p class="tl-when">Dec 2016 &ndash; Mar 2019 &middot; Cochin, India</p>
+        <h3 class="tl-role">System Administrator</h3>
+        <p class="tl-org">Brookwin Technologies <em>&middot; full time</em></p>
+        <ul class="tl-body">
+          <li>Supported server and cloud infrastructure for hosting providers, including myhosting.com and Hostway, across bare-metal and AWS.</li>
+          <li>Held the contracted 99% availability target across the systems I owned, tracked in our monitoring dashboards.</li>
+          <li>Patched and hardened Linux and Windows servers on a set rotation, including provisioning, configuration and rebuilds.</li>
+          <li>Managed Windows Server and Active Directory to L3, and deployed and ran Windows application servers.</li>
+          <li>Scripted the repetitive admin jobs so the steps did not live in anyone's head.</li>
+          <li>Led the Level 1 team, training new engineers on escalation and triage.</li>
+        </ul>
+        <div class="chips tl-tags">
+          <span class="chip">Linux</span><span class="chip">Windows Server</span><span class="chip">Active Directory</span>
+          <span class="chip">AWS EC2</span><span class="chip">S3</span><span class="chip">Route 53</span>
+          <span class="chip">Apache</span><span class="chip">MySQL</span><span class="chip">Bash</span>
+          <span class="chip">PowerShell</span><span class="chip">monitoring</span>
+        </div>
+      </article>
     </div>
   </div>
 </section>
@@ -233,7 +238,8 @@
       <p class="eyebrow">Skills</p>
       <h2>Technologies, with the depth I will actually defend</h2>
       <p>A flat tool list tells you nothing. Everything below carries a depth label, and I hold
-         to those labels in an interview.</p>
+         to those labels in an interview. What I have not worked with is in its own block at the
+         bottom rather than quietly absent.</p>
     </div>
 
     <div class="depth-key">
@@ -257,24 +263,23 @@
       <div class="skill-group">
         <h3>Cloud</h3>
         <div class="skill-list">
-          <span class="sk sk-prod">AWS EC2 / VPC / IAM</span>
+          <span class="sk sk-prod">AWS EC2</span>
+          <span class="sk sk-prod">VPC / IAM</span>
           <span class="sk sk-prod">S3</span>
-          <span class="sk sk-prod">CloudWatch</span>
           <span class="sk sk-prod">Route 53</span>
           <span class="sk sk-prod">RDS</span>
-          <span class="sk sk-work">Lambda</span>
-          <span class="sk sk-work">GCP</span>
+          <span class="sk sk-prod">CloudWatch</span>
+          <span class="sk sk-prod">GCP Compute Engine</span>
           <span class="sk sk-fam">Azure</span>
         </div>
       </div>
 
       <div class="skill-group">
-        <h3>Containers &amp; orchestration</h3>
+        <h3>Containers</h3>
         <div class="skill-list">
           <span class="sk sk-prod">Docker</span>
-          <span class="sk sk-work">Kubernetes / EKS</span>
-          <span class="sk sk-work">kubectl + raw manifests</span>
-          <span class="sk sk-work">Spinnaker</span>
+          <span class="sk sk-prod">Docker Compose</span>
+          <span class="sk sk-work">multi-service container networking</span>
         </div>
       </div>
 
@@ -285,26 +290,28 @@
           <span class="sk sk-prod">Bash</span>
           <span class="sk sk-prod">Python</span>
           <span class="sk sk-prod">PowerShell</span>
-          <span class="sk sk-work">Terraform</span>
         </div>
       </div>
 
       <div class="skill-group">
         <h3>CI/CD &amp; release</h3>
         <div class="skill-list">
-          <span class="sk sk-prod">Jenkins</span>
-          <span class="sk sk-prod">GitHub Actions</span>
+          <span class="sk sk-prod">Jenkins multibranch</span>
+          <span class="sk sk-prod">Ansistrano releases</span>
           <span class="sk sk-prod">Git</span>
-          <span class="sk sk-work">Ansistrano release layout</span>
+          <span class="sk sk-work">branching &amp; release strategy</span>
         </div>
       </div>
 
       <div class="skill-group">
-        <h3>Web &amp; application infrastructure</h3>
+        <h3>Web, proxy &amp; application infrastructure</h3>
         <div class="skill-list">
           <span class="sk sk-prod">Apache (httpd)</span>
           <span class="sk sk-prod">Nginx</span>
+          <span class="sk sk-prod">Traefik</span>
           <span class="sk sk-prod">IIS</span>
+          <span class="sk sk-prod">Let's Encrypt / TLS</span>
+          <span class="sk sk-work">Cloudflare edge</span>
           <span class="sk sk-work">mod_wsgi / Django deploys</span>
           <span class="sk sk-work">FreeIPA / IdM</span>
         </div>
@@ -315,10 +322,8 @@
         <div class="skill-list">
           <span class="sk sk-prod">Prometheus</span>
           <span class="sk sk-prod">Grafana</span>
-          <span class="sk sk-prod">Alertmanager</span>
           <span class="sk sk-prod">CloudWatch</span>
           <span class="sk sk-work">Splunk</span>
-          <span class="sk sk-work">SLO definition &amp; reporting</span>
         </div>
       </div>
 
@@ -326,9 +331,9 @@
         <h3>Data stores</h3>
         <div class="skill-list">
           <span class="sk sk-prod">MySQL</span>
+          <span class="sk sk-prod">MongoDB</span>
+          <span class="sk sk-prod">Redis</span>
           <span class="sk sk-work">PostgreSQL</span>
-          <span class="sk sk-work">Redis</span>
-          <span class="sk sk-work">Kafka</span>
           <span class="sk sk-work">MSSQL migrations</span>
           <span class="sk sk-fam">Oracle</span>
         </div>
@@ -342,27 +347,64 @@
           <span class="sk sk-prod">fail2ban</span>
           <span class="sk sk-prod">rkhunter / maldet / ClamAV</span>
           <span class="sk sk-prod">IAM &amp; least privilege</span>
+          <span class="sk sk-prod">OAuth / JWT auth flows</span>
           <span class="sk sk-work">OSSEC</span>
         </div>
       </div>
 
       <div class="skill-group">
-        <h3>AI in operations</h3>
+        <h3>Protocols &amp; integration</h3>
         <div class="skill-list">
-          <span class="sk sk-work">OpenAI / Anthropic APIs</span>
-          <span class="sk sk-work">LLM-assisted alert triage</span>
-          <span class="sk sk-work">auto-remediation hooks</span>
+          <span class="sk sk-prod">MCP (SSE + Streamable HTTP)</span>
+          <span class="sk sk-prod">DNS</span>
+          <span class="sk sk-prod">HTTP / TLS</span>
+          <span class="sk sk-work">reverse proxy &amp; ForwardAuth</span>
         </div>
+      </div>
+
+      <div class="skill-group is-wide">
+        <h3>Remote &amp; distributed work</h3>
+        <div class="skill-list">
+          <span class="chip">Microsoft Teams</span>
+          <span class="chip">Zoom</span>
+          <span class="chip">async written updates</span>
+          <span class="chip">document &amp; runbook management</span>
+          <span class="chip">time-zone overlap planning</span>
+          <span class="chip">remote onboarding &amp; training</span>
+          <span class="chip">self-directed time management</span>
+        </div>
+        <p style="font-size:13px; color:var(--text-mute); margin-top:12px; max-width:74ch">
+          Not depth-rated, because these are not technologies. My most recent role was fully
+          remote with a team in another time zone, and before that I trained and ran a Level 1
+          team. Both come down to the same thing: writing down what happened so the next person
+          does not have to ask.
+        </p>
       </div>
 
     </div>
 
     <p class="sk-note">
-      Terraform sits at <em>working</em> deliberately: I made changes to an existing configuration
-      and ran plans against it, but I did not design the setup. Kubernetes work was via kubectl and
-      raw manifests with Spinnaker for deploys, not Helm. Azure was support-level exposure during
-      the 2016&ndash;2020 hosting years, not ownership.
+      Azure was support-level exposure during the 2016&ndash;2020 hosting years, not ownership.
+      Splunk I used inside an existing setup rather than building out. PostgreSQL I ran in
+      production but did not design the schema for.
     </p>
+
+    <div class="learning">
+      <h3>Currently building</h3>
+      <p>
+        These are not on my CV as experience and I will not claim them in an interview. They are
+        what I am working through now, on KodeCloud Engineer and in my own lab. I will publish the
+        work as I finish it rather than list the tool and hope nobody asks.
+      </p>
+      <div class="skill-list">
+        <span class="sk sk-learn">Kubernetes</span>
+        <span class="sk sk-learn">Terraform</span>
+        <span class="sk sk-learn">GitHub Actions</span>
+        <span class="sk sk-learn">Helm</span>
+        <span class="sk sk-learn">log aggregation (Loki)</span>
+        <span class="sk sk-learn">SLOs &amp; burn-rate alerting</span>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -380,9 +422,9 @@
       <div class="stage">
         <h3>1 &middot; Provision</h3>
         <ul>
-          <li>EC2, GCE, bare-metal builds</li>
+          <li>EC2 and GCE instances</li>
           <li>VPC, subnets, security groups</li>
-          <li>Terraform against existing config</li>
+          <li>Bare-metal server builds</li>
           <li>New-server build scripts</li>
         </ul>
       </div>
@@ -398,28 +440,28 @@
       <div class="stage">
         <h3>3 &middot; Deploy</h3>
         <ul>
-          <li>Jenkins and GitHub Actions</li>
-          <li>Docker image build and push</li>
-          <li>kubectl apply, Spinnaker</li>
+          <li>Jenkins multibranch pipelines</li>
           <li>Ansistrano release layout</li>
+          <li>Docker image builds</li>
+          <li>Docker Compose services</li>
         </ul>
       </div>
       <div class="stage">
         <h3>4 &middot; Observe</h3>
         <ul>
           <li>Prometheus and node exporters</li>
-          <li>Grafana dashboards, SLO targets</li>
-          <li>Alertmanager routing</li>
-          <li>CloudWatch, Splunk</li>
+          <li>Grafana dashboards</li>
+          <li>CloudWatch metrics and logs</li>
+          <li>Splunk search</li>
         </ul>
       </div>
       <div class="stage">
         <h3>5 &middot; Troubleshoot</h3>
         <ul>
           <li>Disk, inode and memory exhaustion</li>
-          <li>Apache worker and MySQL slow queries</li>
-          <li>DNS, TLS, load balancer paths</li>
-          <li>Failed jobs and failed deploys</li>
+          <li>Apache workers and MySQL slow queries</li>
+          <li>DNS, TLS and proxy paths</li>
+          <li>Long-lived connections behind a CDN</li>
         </ul>
       </div>
       <div class="stage">
@@ -427,100 +469,116 @@
         <ul>
           <li>Bash, Python, PowerShell</li>
           <li>Scheduled patch and hardening runs</li>
-          <li>LLM first-pass alert diagnosis</li>
-          <li>Self-clearing restarts and cleanups</li>
+          <li>Certificate expiry checks</li>
+          <li>Fleet-wide command execution</li>
         </ul>
       </div>
     </div>
 
     <div class="section-head" style="margin-top:56px">
       <p class="eyebrow">Architecture</p>
-      <h2>The delivery and operate loop I ran at Rail Tech</h2>
-      <p>Every component here is one I worked with directly. The dashed line is the part that
-         matters most: what I learn from an incident goes back into the playbooks, not into my head.</p>
+      <h2>The platform I ran at Rail Tech</h2>
+      <p>Every component here is one I worked with directly. It is a small system, deliberately
+         drawn as what it actually was rather than what a diagram usually flatters it into.</p>
     </div>
 
     <div class="diagram-box">
       <div class="diagram-scroll">
-        <svg viewBox="0 0 920 410" role="img" aria-labelledby="dgt dgd">
-          <title id="dgt">Rail Tech delivery and operate loop</title>
-          <desc id="dgd">Source lane: git push to GitHub repo. Build lane: Jenkins or GitHub Actions, build and test, Docker image. Run lane: Ansible baseline and kubectl manifests onto EKS, EC2 and GCE, with S3, RDS and Route 53. Observe lane: Prometheus and CloudWatch to Alertmanager to LLM first-pass triage, which either auto-remediates or pages. A dashed feedback line returns from that step to the Ansible baseline.</desc>
+        <svg viewBox="0 0 920 425" role="img" aria-labelledby="dgt dgd">
+          <title id="dgt">Rail Tech MME production architecture</title>
+          <desc id="dgd">MCP clients (Claude Desktop, Cursor, Claude Code) connect over SSE and Streamable HTTP, and browsers reach a React frontend on Vercel. Both pass through Cloudflare at the edge, which has a roughly 100 second idle timeout on proxied connections, defeated by a 25 second SSE keepalive. Traefik handles routing and Let's Encrypt TLS and bounces every protected route to a Node jwt-verifier via ForwardAuth. Behind it run the Go tagging service with the MCP server and the Python tagmaker service, which share MongoDB, Redis and PostgreSQL. Prometheus and Grafana collect metrics. All containers run on one Docker Compose bridge network on a single Compute Engine VM.</desc>
 
           <defs>
             <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M0 0 L10 5 L0 10 z" style="fill: var(--text-mute)"/>
             </marker>
-            <marker id="ahf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <marker id="ahd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M0 0 L10 5 L0 10 z" style="fill: var(--sand-dim)"/>
             </marker>
           </defs>
 
-          <!-- lane labels -->
-          <text class="dg-lane" x="0" y="48">SOURCE</text>
-          <text class="dg-lane" x="0" y="136">BUILD</text>
-          <text class="dg-lane" x="0" y="224">RUN</text>
-          <text class="dg-lane" x="0" y="312">OBSERVE</text>
+          <text class="dg-lane" x="0" y="43">CLIENTS</text>
+          <text class="dg-lane" x="0" y="117">EDGE</text>
+          <text class="dg-lane" x="0" y="192">PROXY</text>
+          <text class="dg-lane" x="0" y="274">SERVICES</text>
+          <text class="dg-lane" x="0" y="356">DATA</text>
 
-          <!-- lane 1 -->
-          <rect class="dg-box" x="112" y="24" width="126" height="40"/>
-          <text class="dg-txt" x="175" y="49" text-anchor="middle">git push</text>
-          <path class="dg-line" d="M238 44 H258" marker-end="url(#ah)"/>
-          <rect class="dg-box" x="262" y="24" width="140" height="40"/>
-          <text class="dg-txt" x="332" y="49" text-anchor="middle">GitHub repo</text>
+          <!-- clients -->
+          <rect class="dg-box" x="112" y="16" width="330" height="46"/>
+          <text class="dg-txt" x="277" y="37" text-anchor="middle">MCP clients &middot; SSE + Streamable HTTP</text>
+          <text class="dg-sub" x="277" y="52" text-anchor="middle">Claude Desktop &middot; Cursor &middot; Claude Code</text>
 
-          <path class="dg-line" d="M332 64 V88 H202 V108" marker-end="url(#ah)"/>
+          <rect class="dg-box" x="470" y="16" width="200" height="46"/>
+          <text class="dg-txt" x="570" y="37" text-anchor="middle">Browser</text>
+          <text class="dg-sub" x="570" y="52" text-anchor="middle">React frontend on Vercel</text>
 
-          <!-- lane 2 -->
-          <rect class="dg-box" x="112" y="112" width="180" height="40"/>
-          <text class="dg-txt" x="202" y="137" text-anchor="middle">Jenkins / GH Actions</text>
-          <path class="dg-line" d="M292 132 H312" marker-end="url(#ah)"/>
-          <rect class="dg-box" x="316" y="112" width="150" height="40"/>
-          <text class="dg-txt" x="391" y="137" text-anchor="middle">build + test</text>
-          <path class="dg-line" d="M466 132 H486" marker-end="url(#ah)"/>
-          <rect class="dg-box" x="490" y="112" width="150" height="40"/>
-          <text class="dg-txt" x="565" y="137" text-anchor="middle">Docker image</text>
+          <path class="dg-line" d="M277 62 V88" marker-end="url(#ah)"/>
+          <path class="dg-line" d="M570 62 V88" marker-end="url(#ah)"/>
+          <text class="dg-note" x="286" y="80">25s keepalive</text>
 
-          <path class="dg-line" d="M565 152 V176 H391 V196" marker-end="url(#ah)"/>
+          <!-- edge -->
+          <rect class="dg-box" x="112" y="92" width="558" height="40"/>
+          <text class="dg-txt" x="391" y="110" text-anchor="middle">Cloudflare &middot; edge, DDoS, CDN</text>
+          <text class="dg-sub" x="391" y="124" text-anchor="middle">~100s idle timeout on proxied connections</text>
 
-          <!-- lane 3 -->
-          <rect class="dg-box" x="112" y="200" width="170" height="40"/>
-          <text class="dg-txt" x="197" y="225" text-anchor="middle">Ansible baseline</text>
-          <path class="dg-line" d="M282 220 H302" marker-end="url(#ah)"/>
-          <rect class="dg-box" x="306" y="200" width="170" height="40"/>
-          <text class="dg-txt" x="391" y="225" text-anchor="middle">kubectl manifests</text>
-          <path class="dg-line" d="M476 220 H496" marker-end="url(#ah)"/>
-          <rect class="dg-box" x="500" y="200" width="196" height="40"/>
-          <text class="dg-txt" x="598" y="225" text-anchor="middle">EKS &middot; EC2 &middot; GCE</text>
-          <rect class="dg-box" x="712" y="200" width="196" height="40"/>
-          <text class="dg-txt" x="810" y="225" text-anchor="middle">S3 &middot; RDS &middot; Route 53</text>
+          <path class="dg-line" d="M391 132 V158" marker-end="url(#ah)"/>
 
-          <path class="dg-line" d="M598 240 V264 H207 V284" marker-end="url(#ah)"/>
+          <!-- proxy -->
+          <rect class="dg-box" x="112" y="162" width="558" height="52"/>
+          <text class="dg-txt" x="391" y="184" text-anchor="middle">Traefik v2.11</text>
+          <text class="dg-sub" x="391" y="200" text-anchor="middle">routing &middot; Let's Encrypt TLS &middot; ForwardAuth on every protected route</text>
 
-          <!-- lane 4 -->
-          <rect class="dg-box" x="112" y="288" width="190" height="40"/>
-          <text class="dg-txt" x="207" y="313" text-anchor="middle">Prometheus / CloudWatch</text>
-          <path class="dg-line" d="M302 308 H322" marker-end="url(#ah)"/>
-          <rect class="dg-box" x="326" y="288" width="150" height="40"/>
-          <text class="dg-txt" x="401" y="313" text-anchor="middle">Alertmanager</text>
-          <path class="dg-line" d="M476 308 H496" marker-end="url(#ah)"/>
-          <rect class="dg-box" x="500" y="288" width="190" height="40"/>
-          <text class="dg-txt" x="595" y="313" text-anchor="middle">LLM first-pass triage</text>
-          <path class="dg-line" d="M690 308 H710" marker-end="url(#ah)"/>
-          <rect class="dg-box" x="714" y="288" width="194" height="40"/>
-          <text class="dg-txt" x="811" y="308" text-anchor="middle">auto-remediate</text>
-          <text class="dg-txt" x="811" y="322" text-anchor="middle">or page me</text>
+          <rect class="dg-box" x="700" y="162" width="206" height="52"/>
+          <text class="dg-txt" x="803" y="184" text-anchor="middle">jwt-verifier (Node)</text>
+          <text class="dg-sub" x="803" y="200" text-anchor="middle">/verify &middot; Google OAuth &middot; JWT</text>
+          <path class="dg-line" d="M674 188 H696" marker-start="url(#ah)" marker-end="url(#ah)"/>
 
-          <!-- feedback -->
-          <path class="dg-feed" d="M811 328 V370 H197 V244" marker-end="url(#ahf)"/>
-          <text class="dg-note" x="504" y="388" text-anchor="middle">every fix worth keeping becomes a playbook change</text>
+          <path class="dg-line" d="M391 214 V240" marker-end="url(#ah)"/>
+
+          <!-- services -->
+          <rect class="dg-box" x="112" y="244" width="268" height="52"/>
+          <text class="dg-txt" x="246" y="266" text-anchor="middle">mme-tagging-service (Go / Fiber)</text>
+          <text class="dg-sub" x="246" y="282" text-anchor="middle">tag graph &middot; retrieval &middot; MCP server</text>
+
+          <rect class="dg-box" x="396" y="244" width="274" height="52"/>
+          <text class="dg-txt" x="533" y="266" text-anchor="middle">mme-tagmaker-service (Python)</text>
+          <text class="dg-sub" x="533" y="282" text-anchor="middle">FastAPI &middot; LLM tag extraction</text>
+
+          <rect class="dg-box" x="700" y="244" width="206" height="52"/>
+          <text class="dg-txt" x="803" y="266" text-anchor="middle">Prometheus + Grafana</text>
+          <text class="dg-sub" x="803" y="282" text-anchor="middle">metrics and dashboards</text>
+          <path class="dg-dash" d="M670 270 H696" marker-end="url(#ahd)"/>
+
+          <!-- services to data bus -->
+          <path class="dg-line" d="M246 296 V310"/>
+          <path class="dg-line" d="M533 296 V310"/>
+          <path class="dg-line" d="M202 310 H582"/>
+          <path class="dg-line" d="M202 310 V324" marker-end="url(#ah)"/>
+          <path class="dg-line" d="M393 310 V324" marker-end="url(#ah)"/>
+          <path class="dg-line" d="M582 310 V324" marker-end="url(#ah)"/>
+
+          <!-- data -->
+          <rect class="dg-box" x="112" y="328" width="180" height="46"/>
+          <text class="dg-txt" x="202" y="349" text-anchor="middle">MongoDB 7</text>
+          <text class="dg-sub" x="202" y="364" text-anchor="middle">primary datastore</text>
+
+          <rect class="dg-box" x="308" y="328" width="170" height="46"/>
+          <text class="dg-txt" x="393" y="349" text-anchor="middle">Redis 7</text>
+          <text class="dg-sub" x="393" y="364" text-anchor="middle">cache &middot; rate-limit state</text>
+
+          <rect class="dg-box" x="494" y="328" width="176" height="46"/>
+          <text class="dg-txt" x="582" y="349" text-anchor="middle">PostgreSQL</text>
+          <text class="dg-sub" x="582" y="364" text-anchor="middle">pgvector retrieval</text>
+
+          <text class="dg-foot" x="112" y="402">all containers on one Docker Compose bridge network &middot; single Compute Engine VM (e2-standard-2, us-central1)</text>
         </svg>
       </div>
 
       <div class="diagram-legend">
-        <div><b>Jenkins / GH Actions</b>Jenkins carried the older services; newer repos build in GitHub Actions. Both end at the same image registry.</div>
-        <div><b>Ansible baseline</b>Patching and hardening run on a schedule against the whole fleet, so a rebuilt host comes back identical.</div>
-        <div><b>LLM first-pass triage</b>The alert plus recent logs and metrics goes to an LLM, which drafts a likely cause before a human opens it.</div>
-        <div><b>auto-remediate or page</b>Known-safe actions such as a service restart or a log cleanup run themselves. Anything else pages.</div>
+        <div><b>ForwardAuth</b>Every protected route is bounced to the verifier before it reaches an application container, so authentication is enforced once at the proxy rather than reimplemented per service.</div>
+        <div><b>Rate limit by user ID</b>Cloudflare collapses many real users behind a handful of shared IPs, so an IP-keyed limit would punish the wrong people.</div>
+        <div><b>25s SSE keepalive</b>An idle MCP stream looked like a dead connection to Cloudflare's timeout. The keepalive keeps traffic inside the window.</div>
+        <div><b>Defence in depth</b>The service middleware repeats CORS, security headers, rate limiting and JWT checks that Traefik already applies, so a proxy misconfiguration is not a single point of failure.</div>
       </div>
     </div>
   </div>
@@ -531,8 +589,8 @@
   <div class="wrap">
     <div class="section-head">
       <p class="eyebrow">Work</p>
-      <h2>Five pieces of infrastructure work</h2>
-      <p>All five are from paid work rather than tutorials. Where the supporting scripts and notes
+      <h2>Six pieces of infrastructure work</h2>
+      <p>All six are from paid work rather than tutorials. Where the supporting scripts and notes
          are publishable, I have stripped the client detail and put them on GitHub so you can read
          the actual commands rather than take my word for it.</p>
     </div>
@@ -542,106 +600,137 @@
       <!-- 1 -->
       <article class="project">
         <div class="project-top">
-          <h3>Scheduled fleet patching and hardening with Ansible</h3>
+          <h3>A Model Context Protocol server in production</h3>
           <span class="tag tag-pro">Professional</span>
         </div>
-        <p class="project-where">Rail Tech Inc. &middot; ~20 hosts across AWS and GCP &middot; 2025&ndash;2026</p>
+        <p class="project-where">Rail Tech Inc. &middot; AI memory platform &middot; 2025&ndash;2026</p>
         <div class="pgrid">
           <div class="pblock">
             <h4>Problem</h4>
-            <p>Patching and hardening were per-host and manual. Hosts built at different times had drifted, so "the same" server was not the same server, and a rebuild did not reliably come back the way it went in.</p>
+            <p>The platform needed to be reachable from AI coding tools as a first-class integration rather than through a bespoke API each client had to learn. MCP is the emerging standard for that, and it was mid-transition between two transports.</p>
           </div>
           <div class="pblock">
             <h4>Approach</h4>
-            <p>Wrote Ansible playbooks covering the OS baseline, package updates, SSH and sysctl hardening, and service configuration, then put them on a schedule against the whole inventory rather than running them by hand per incident.</p>
+            <p>Implemented both the legacy SSE transport and the newer Streamable HTTP transport on the same route prefix, so older and newer clients could connect without a separate endpoint or a flag day. Three tools exposed: save, inject and feedback.</p>
           </div>
           <div class="pblock">
             <h4>Technologies &amp; why</h4>
-            <p>Ansible because it is agentless and the fleet already had SSH access; no new agent to install, patch and monitor on hosts I was trying to reduce work on. Playbooks in Git so a config change is reviewable and revertible.</p>
+            <p>Go with the mcp-go library, inside the existing Fiber service so the tools sit next to the retrieval code they call. The MCP server validates its bearer token at connection time rather than through the proxy's ForwardAuth, because a long-lived SSE stream does not fit a per-request auth model.</p>
           </div>
           <div class="pblock">
             <h4>Result</h4>
-            <p>Nobody logs into servers one at a time for patching any more. A rebuilt host converges on the same baseline as the rest of the fleet, which is what made rebuilding a normal action instead of a last resort.</p>
+            <p>Working integrations with Claude Desktop, Cursor and Claude Code. The interesting part was not the protocol, it was the connection lifetime problem behind a CDN, which is in the case study.</p>
           </div>
         </div>
         <div class="project-foot">
-          <a class="cs-link" href="case-studies/fleet-automation.html">Read the case study
+          <a class="cs-link" href="case-studies/mcp-server.html">Read the case study
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </a>
-          <a class="evidence" href="https://github.com/socialp630/linux" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.8.1-.8.1-.8 1.2.1 1.9 1.3 1.9 1.3 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.6 5 18.6 5.3 18.6 5.3c.7 1.7.3 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg>
-            socialp630/linux
-          </a>
+          <span class="project-where" style="margin:0">Go &middot; Fiber &middot; mcp-go &middot; SSE &middot; Streamable HTTP</span>
         </div>
       </article>
 
       <!-- 2 -->
       <article class="project">
         <div class="project-top">
-          <h3>Release pipelines in Jenkins and GitHub Actions</h3>
+          <h3>Edge-to-service authentication with Cloudflare, Traefik and JWT</h3>
           <span class="tag tag-pro">Professional</span>
         </div>
-        <p class="project-where">Rail Tech Inc. &middot; every service on the platform &middot; 2025&ndash;2026</p>
+        <p class="project-where">Rail Tech Inc. &middot; every protected route on the platform &middot; 2025&ndash;2026</p>
         <div class="pgrid">
           <div class="pblock">
             <h4>Problem</h4>
-            <p>Releases depended on whoever knew the steps for that service. Two engineers deploying the same service did not necessarily do the same thing, and there was no single record of what shipped when.</p>
+            <p>Two very different client types needed authenticating: browser users signing in with Google, and programmatic MCP clients holding an API key. Reimplementing that check inside each service would have meant three places to get it wrong.</p>
           </div>
           <div class="pblock">
             <h4>Approach</h4>
-            <p>Put every service behind a pipeline: commit triggers build and test, a passing build produces a tagged Docker image, and deployment applies manifests to the cluster. Older services stayed on Jenkins; newer repositories build in GitHub Actions.</p>
+            <p>Authenticate once at the proxy. Traefik ForwardAuth bounces every protected route to a small verifier service before the request reaches an application container. Browser users get a first-party JWT after Google ID token verification; API keys are exchanged for short-lived JWTs.</p>
           </div>
           <div class="pblock">
             <h4>Technologies &amp; why</h4>
-            <p>Jenkins because it was already carrying the multibranch builds and rewriting them bought nothing. GitHub Actions for new repos, so the pipeline lives beside the code it ships. Docker so that what was tested is what runs.</p>
+            <p>Traefik because it was already terminating TLS and routing, so ForwardAuth added a control rather than a component. Cloudflare in front for edge and DDoS, with Traefik configured to trust its published IP ranges so the real client address survives the hop.</p>
           </div>
           <div class="pblock">
             <h4>Result</h4>
-            <p>Deployment became a repeatable pipeline run rather than a set of remembered steps, and every release has a build record attached to a commit. I am not claiming a time saving I did not measure.</p>
+            <p>One place where authentication is decided. Rate limiting keyed to user ID rather than IP, because behind Cloudflare an IP-keyed limit throttles a shared address rather than an abuser. Service middleware still repeats the checks, so a proxy misconfiguration is not a single point of failure.</p>
           </div>
         </div>
         <div class="project-foot">
-          <a class="cs-link" href="case-studies/release-pipeline.html">Read the case study
+          <a class="cs-link" href="case-studies/edge-auth.html">Read the case study
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </a>
-          <span class="project-where" style="margin:0">Jenkins &middot; GitHub Actions &middot; Docker &middot; kubectl</span>
+          <span class="project-where" style="margin:0">Traefik &middot; ForwardAuth &middot; Cloudflare &middot; Google OAuth &middot; JWT</span>
         </div>
       </article>
 
       <!-- 3 -->
       <article class="project">
         <div class="project-top">
-          <h3>LLM-assisted incident triage and auto-remediation</h3>
+          <h3>Jenkins multibranch pipeline with Ansistrano releases</h3>
           <span class="tag tag-pro">Professional</span>
         </div>
-        <p class="project-where">Rail Tech Inc. &middot; production alerting path &middot; 2025&ndash;2026</p>
+        <p class="project-where">Armia Systems Ltd. &middot; hosting client applications &middot; 2019</p>
         <div class="pgrid">
           <div class="pblock">
             <h4>Problem</h4>
-            <p>A small team carrying a pager spends a lot of its night on alerts that turn out to be the same handful of causes: a service that needs restarting, a disk filling with logs, a job that failed and will pass on retry.</p>
+            <p>Deployment depended on who knew the steps for that application. Two engineers deploying the same thing did not necessarily do the same thing, and rolling back meant reconstructing what had been running before.</p>
           </div>
           <div class="pblock">
             <h4>Approach</h4>
-            <p>Routed alerts through a step that collects the recent logs and metrics for the affected host or service, asks an LLM for a first-pass diagnosis, and attaches it to the alert. A short allow-list of known-safe actions runs automatically; everything else pages a human with the draft already attached.</p>
+            <p>A multibranch pipeline so every branch built the same way, with an Ansistrano release layout on the target hosts: timestamped release directories and a symlink swap for the cutover. Plus the branching and release plan around it, so the pipeline matched how the team actually worked.</p>
           </div>
           <div class="pblock">
             <h4>Technologies &amp; why</h4>
-            <p>Prometheus and Alertmanager were already the alerting path, so this sits in front of the notification rather than replacing anything. OpenAI and Anthropic APIs for the diagnosis step. The allow-list is deliberately narrow, because an automated action on a wrong diagnosis is worse than a page.</p>
+            <p>Jenkins because it could watch every branch without a job per branch. Ansistrano because it builds on Ansible, which was already how these hosts were configured, and because the symlink-swap layout makes rollback a swap back rather than a redeploy.</p>
           </div>
           <div class="pblock">
             <h4>Result</h4>
-            <p>Routine restarts and disk cleanups clear themselves. For the rest, whoever picks up the page starts from a written first hypothesis and the relevant log lines instead of an empty terminal.</p>
+            <p>Deployment became a pipeline run rather than a remembered procedure, and rollback became switching a symlink to the previous release. I did not measure deployment time before and after, so I am not claiming a percentage.</p>
           </div>
         </div>
         <div class="project-foot">
-          <a class="cs-link" href="case-studies/incident-response.html">Read the case study
+          <a class="cs-link" href="case-studies/release-pipeline.html">Read the case study
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </a>
-          <span class="project-where" style="margin:0">Prometheus &middot; Alertmanager &middot; Python &middot; OpenAI / Anthropic APIs</span>
+          <span class="project-where" style="margin:0">Jenkins &middot; Ansistrano &middot; Ansible &middot; Git</span>
         </div>
       </article>
 
       <!-- 4 -->
+      <article class="project">
+        <div class="project-top">
+          <h3>Ansible baseline for hosting servers</h3>
+          <span class="tag tag-pro">Professional</span>
+        </div>
+        <p class="project-where">Armia Systems Ltd. &middot; client server fleet &middot; 2019</p>
+        <div class="pgrid">
+          <div class="pblock">
+            <h4>Problem</h4>
+            <p>Patching and hardening were per-host and manual. Servers built at different times by different engineers had drifted, so "the same server" was not the same server and a rebuild did not reliably come back the way it went in.</p>
+          </div>
+          <div class="pblock">
+            <h4>Approach</h4>
+            <p>Wrote playbooks covering the OS baseline, package updates, SSH and sysctl hardening and service configuration, and ran them against the fleet rather than working down a list of hosts by hand.</p>
+          </div>
+          <div class="pblock">
+            <h4>Technologies &amp; why</h4>
+            <p>Ansible because it is agentless and the hosts already had SSH access. On servers I was trying to reduce work on, an agent would have been one more thing to install, patch and monitor. Idempotent modules over shell commands, so a second run reports nothing changed and the output stays readable.</p>
+          </div>
+          <div class="pblock">
+            <h4>Result</h4>
+            <p>Patching stopped being a per-host task, and a rebuilt server converged on the same baseline as the rest. That is what made rebuilding a normal action rather than a last resort.</p>
+          </div>
+        </div>
+        <div class="project-foot">
+          <a class="evidence" href="https://github.com/socialp630/linux" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.8.1-.8.1-.8 1.2.1 1.9 1.3 1.9 1.3 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.6 5 18.6 5.3 18.6 5.3c.7 1.7.3 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg>
+            socialp630/linux
+          </a>
+          <span class="project-where" style="margin:0">Ansible &middot; CentOS 7 &middot; SSH &middot; sysctl</span>
+        </div>
+      </article>
+
+      <!-- 5 -->
       <article class="project">
         <div class="project-top">
           <h3>Linux hardening baseline for hosting fleets</h3>
@@ -675,7 +764,7 @@
         </div>
       </article>
 
-      <!-- 5 -->
+      <!-- 6 -->
       <article class="project">
         <div class="project-top">
           <h3>Apache and MySQL tuning on shared hosting</h3>
@@ -721,12 +810,22 @@
   <div class="wrap">
     <div class="section-head">
       <p class="eyebrow">Incident engineering</p>
-      <h2>Five failures I have actually worked</h2>
+      <h2>Six failures I have actually worked</h2>
       <p>Tools are learnable. What takes years is knowing where to look. Each of these ends in a
          prevention step, because a fix that only works once is not finished.</p>
     </div>
 
     <div class="faults">
+
+      <article class="fault">
+        <h3 class="fault-sym">MCP clients silently lose their connection after about 100 seconds of quiet</h3>
+        <div class="fault-steps">
+          <div><b>Investigation</b>No error on either side, which ruled out an application-level failure. Reproduced against the service directly and through the CDN. Direct connections held; proxied ones did not.</div>
+          <div><b>Root cause</b>Cloudflare closes a proxied connection that has been idle for roughly 100 seconds. An SSE stream with nothing to send looks exactly like an idle connection.</div>
+          <div><b>Fix</b>A 25 second keepalive on the SSE stream, comfortably inside the timeout window rather than at its edge.</div>
+          <div><b>Prevention</b>Anything long-lived behind a proxy or CDN gets its keepalive interval checked against that proxy's idle timeout, rather than assumed. It is not in the application's own documentation.</div>
+        </div>
+      </article>
 
       <article class="fault">
         <h3 class="fault-sym">Sites on a shared host stop serving, but <code>df -h</code> shows free space</h3>
@@ -783,13 +882,10 @@
       <article class="fault">
         <h3 class="fault-sym">Deployment reports success but the service does not come up on one host</h3>
         <div class="fault-steps">
-          <div><b>Investigation</b>Pipeline was green and the artifact was correct, so the difference was the host. Compared the failing host's configuration and installed packages against a working one.</div>
+          <div><b>Investigation</b>Pipeline was green and the release directory was correct, so the difference was the host. Compared the failing host's configuration and installed packages against a working one.</div>
           <div><b>Root cause</b>Configuration drift. That host had been fixed by hand during an earlier incident and never brought back in line, so it no longer matched what the deployment assumed.</div>
-          <div><b>Fix</b>Brought the host back to the baseline through the configuration management run rather than hand-patching it a second time, then redeployed.</div>
-          <div><b>Prevention</b>This is the argument for scheduled Ansible runs across the whole fleet: drift gets corrected on a cadence instead of being discovered during a deployment.</div>
-        </div>
-        <div class="fault-foot">
-          <a class="cs-link" href="case-studies/fleet-automation.html">How that was fixed properly &rarr;</a>
+          <div><b>Fix</b>Brought the host back to the baseline through the Ansible run rather than hand-patching it a second time, then redeployed.</div>
+          <div><b>Prevention</b>This is the argument for running the configuration baseline across the whole fleet on a cadence: drift gets corrected on a schedule instead of being discovered during a deployment.</div>
         </div>
       </article>
 
@@ -819,8 +915,8 @@
         <p>Disk percentage without inode usage, memory percentage without swap activity: the alert that fires too late is nearly as bad as no alert.</p>
       </div>
       <div class="principle">
-        <h3>Root cause, then the writeup</h3>
-        <p>An incident that is restarted and forgotten will happen again on someone else's shift. The writeup is the part that makes it stop.</p>
+        <h3>Know your gaps precisely</h3>
+        <p>An honest inventory of what a system does not have is worth more than an optimistic one of what it does. The same goes for my own skills, which is why the list above is labelled.</p>
       </div>
       <div class="principle">
         <h3>Least privilege, and separate environments</h3>
@@ -908,14 +1004,14 @@
 
       <div class="repo repo-soon">
         <h3>windows &middot; ansible &middot; jenkins</h3>
-        <p>PowerShell server health, disk and patch reporting, AD auditing and an MSSQL migration note; Ansible baseline, nginx, patching and user playbooks; Jenkins multibranch setup, a Jenkinsfile and the deploy flow.</p>
-        <p class="why">In progress &mdash; published as each one is finished.</p>
+        <p>PowerShell server health, disk and patch reporting, AD auditing and an MSSQL migration note; the Ansible baseline, nginx, patching and user playbooks; Jenkins multibranch setup, a Jenkinsfile and the Ansistrano deploy flow.</p>
+        <p class="why">From the 2016&ndash;2020 work. In progress, published as each one is finished.</p>
       </div>
 
       <div class="repo repo-soon">
         <h3>docker &middot; kubernetes &middot; monitoring</h3>
-        <p>Dockerfiles and compose stacks; kubeadm install, manifests, troubleshooting notes and a kubectl cheatsheet; Prometheus, Grafana and Nagios install notes and configuration.</p>
-        <p class="why">In progress &mdash; published as each one is finished.</p>
+        <p>Dockerfiles and Compose stacks from real work; Kubernetes and observability material from current lab work, clearly marked as such.</p>
+        <p class="why">Mixed. The Docker material is from production; the Kubernetes material is lab work I am doing now and is labelled that way in the repository.</p>
       </div>
 
     </div>
@@ -980,9 +1076,10 @@
   ],
   "knowsAbout": [
     "Linux administration", "Windows Server", "Active Directory", "AWS", "GCP",
-    "Kubernetes", "Docker", "Ansible", "Jenkins", "GitHub Actions", "Terraform",
-    "CI/CD", "Infrastructure as Code", "Prometheus", "Grafana", "Incident management",
-    "Production support", "Bash", "Python", "PowerShell", "MySQL", "Apache", "Nginx"
+    "Docker", "Ansible", "Jenkins", "CI/CD", "Traefik", "Cloudflare",
+    "Prometheus", "Grafana", "Incident management", "Production support",
+    "Bash", "Python", "PowerShell", "MySQL", "MongoDB", "Redis", "Apache", "Nginx",
+    "Model Context Protocol", "OAuth", "JWT"
   ],
   "hasCredential": [
     { "@type": "EducationalOccupationalCredential", "name": "AWS Certified SysOps Administrator - Associate", "credentialCategory": "certification", "recognizedBy": { "@type": "Organization", "name": "Amazon Web Services" } },

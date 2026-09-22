@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Release pipelines on a small team — Aneesh Satheesh</title>
-<meta name="description" content="Case study: putting every service behind a Jenkins or GitHub Actions pipeline so deployment stopped depending on who remembered the steps.">
+<title>Jenkins and Ansistrano releases — Aneesh Satheesh</title>
+<meta name="description" content="Case study: replacing remembered deployment procedures with a Jenkins multibranch pipeline and an Ansistrano release layout, where rollback is a symlink swap.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230e1418'/%3E%3Cpath d='M7 11l5 5-5 5' fill='none' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M15 21h10' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,10 +13,11 @@
 <style>
   .dg-box  { fill: var(--surface-2); stroke: var(--line); stroke-width: 1; rx: 3; }
   .dg-txt  { fill: var(--text-dim); font-family: var(--mono); font-size: 12px; }
+  .dg-sub  { fill: var(--text-mute); font-family: var(--mono); font-size: 10.5px; }
   .dg-lane { fill: var(--sand); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; font-weight: 600; }
   .dg-line { stroke: var(--text-mute); stroke-width: 1.2; fill: none; }
-  .dg-stop { stroke: var(--sand-dim); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
-  .dg-note { fill: var(--text-mute); font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; }
+  .dg-dash { stroke: var(--sand-dim); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+  .dg-note { fill: var(--text-mute); font-family: var(--mono); font-size: 10.5px; }
 </style>
 </head>
 <body>
@@ -40,20 +41,20 @@
 <section class="hero cs-hero">
   <div class="wrap">
     <a class="back" href="../index.html#projects">&larr; All projects</a>
-    <p class="eyebrow">Case study 02 &middot; CI/CD</p>
+    <p class="eyebrow">Case study 03 &middot; CI/CD</p>
     <h1>Making deployment a pipeline run instead of a remembered procedure</h1>
     <p class="lede">
-      Every service on the platform shipped through a build that produced a tagged image and a
-      deployment that applied it. The interesting part was not the tooling; it was deciding what
-      not to rewrite.
+      Deployment depended on who knew the steps. A multibranch pipeline and a release layout
+      where rollback is a symlink swap turned it into something any engineer on the team could
+      run, and undo.
     </p>
 
     <div class="cs-facts">
-      <div><b>Where</b><span>Rail Tech Inc.</span></div>
-      <div><b>When</b><span>2025 &ndash; 2026</span></div>
-      <div><b>Scope</b><span>Every service on the platform</span></div>
-      <div><b>My role</b><span>Built and maintained the pipelines</span></div>
-      <div><b>Stack</b><span>Jenkins, GitHub Actions, Docker, kubectl, Git</span></div>
+      <div><b>Where</b><span>Armia Systems Ltd.</span></div>
+      <div><b>When</b><span>2019</span></div>
+      <div><b>Scope</b><span>Hosting client applications</span></div>
+      <div><b>My role</b><span>Built and ran it</span></div>
+      <div><b>Stack</b><span>Jenkins, Ansistrano, Ansible, Git</span></div>
     </div>
   </div>
 </section>
@@ -64,43 +65,42 @@
     <div class="cs-block">
       <h2>Problem</h2>
       <p>
-        Releases depended on who knew the steps for that service. Some had a Jenkins job, some had
-        a script, some had an engineer with a terminal and a good memory. Two people deploying the
-        same service did not necessarily do the same thing.
+        Deploying an application meant knowing that application's steps. Some of it was written
+        down, some of it was in somebody's shell history, and the parts that mattered most were
+        the parts nobody had thought to record because they were obvious to whoever did them last.
       </p>
       <p>
-        The practical costs showed up in two places. Rolling back meant reconstructing what had
-        been running before, because there was no single record tying a running version to a
-        commit. And onboarding anyone onto a service meant transferring the deployment procedure
-        out of someone's head, which is slow and lossy.
+        Two costs followed. Rollback meant reconstructing what had been running before, under
+        exactly the time pressure that makes reconstruction go wrong. And any engineer who had
+        not deployed that application before could not do it safely, which meant deployments
+        clustered around whoever had, whether or not they were available.
       </p>
+      <div class="callout">
+        <b>The failure that made it urgent</b>
+        A deployment that needed backing out, where getting to the previous state meant
+        redeploying an older commit and hoping the environment came back the same way. It did,
+        eventually. The problem was that nobody could say in advance whether it would.
+      </div>
     </div>
 
     <div class="cs-block">
       <h2>Environment</h2>
       <ul>
-        <li><strong>A production AI platform</strong> on AWS and GCP, roughly 20 hosts, with workloads moving onto EKS and Docker as traffic outgrew single hosts.</li>
-        <li><strong>An existing Jenkins installation</strong> already carrying multibranch builds for the older services.</li>
-        <li><strong>Newer repositories on GitHub</strong>, where the team was already reviewing code.</li>
-        <li><strong>A small team</strong> with no dedicated build engineer, so whatever I built I also had to keep running.</li>
+        <li><strong>Applications running on hosting client servers</strong>, Linux, deployed to filesystem paths served by a web server rather than to containers.</li>
+        <li><strong>Ansible already in use</strong> for server configuration and the patching and hardening rounds, so the hosts were already reachable and already had a configuration baseline.</li>
+        <li><strong>Git for source</strong>, with branches per feature and a release process that was more convention than process.</li>
+        <li><strong>A small team carrying support alongside project work</strong>, which is the real constraint: anything that needed constant attention would not survive a busy week.</li>
       </ul>
     </div>
 
     <div class="cs-block">
       <h2>Constraints</h2>
       <ul>
-        <li><strong>Do not rewrite what works.</strong> Migrating functioning Jenkins multibranch builds to another tool would have spent weeks to arrive at the same behaviour.</li>
-        <li><strong>One artifact type.</strong> Whatever the build system, the output had to be the same kind of thing, or deployment would fragment again.</li>
-        <li><strong>Deployable by someone who is not me.</strong> The point of the exercise was removing the dependency on individual knowledge.</li>
-        <li><strong>Secrets stay out of repositories.</strong> Non-negotiable, and easy to get wrong when you are moving fast.</li>
+        <li><strong>No containers.</strong> These were conventional application deployments onto servers, so the artifact was a directory of files, not an image.</li>
+        <li><strong>Rollback had to be fast and certain</strong>, not "redeploy the previous commit and see".</li>
+        <li><strong>A job per branch was not sustainable.</strong> Creating and deleting Jenkins jobs by hand as branches came and went is work that gets skipped, and then branches build differently from each other.</li>
+        <li><strong>The process had to match how the team actually worked</strong>, not how a tutorial assumes a team works. A pipeline that does not fit the branching model gets bypassed.</li>
       </ul>
-      <div class="callout">
-        <b>The call I made</b>
-        Two CI systems is not ideal and I would not design it that way from scratch. But the cost
-        of standardising was real and the benefit was cosmetic: both paths already produced the
-        same artifact and deployed the same way. I standardised the artifact and the deployment
-        step, and left the build systems where they were.
-      </div>
     </div>
 
     <div class="cs-block cs-wide">
@@ -109,56 +109,58 @@
       <div class="diagram-box" style="margin-top:20px">
         <div class="diagram-scroll">
           <svg viewBox="0 0 880 320" role="img" aria-labelledby="rpt rpd">
-            <title id="rpt">Release pipeline architecture</title>
-            <desc id="rpd">A commit to a branch triggers either Jenkins for older services or GitHub Actions for newer repositories. Both run build and test, and a passing build produces a tagged Docker image pushed to a registry. Deployment applies Kubernetes manifests with kubectl to the target environment, after which Prometheus and Grafana observe the running service. A failing test stops the pipeline before an image is produced.</desc>
+            <title id="rpt">Jenkins multibranch and Ansistrano release flow</title>
+            <desc id="rpd">A push to any branch is discovered by the Jenkins multibranch job, which builds and tests it. A failing build stops there. A passing build on a release branch triggers an Ansistrano deploy, which creates a timestamped release directory on the target host, links shared files into it, and swaps the current symlink to point at it. Rollback swaps the symlink back to the previous release.</desc>
             <defs>
-              <marker id="rp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <marker id="ra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                 <path d="M0 0 L10 5 L0 10 z" style="fill: var(--text-mute)"/>
               </marker>
-              <marker id="rps" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <marker id="rb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                 <path d="M0 0 L10 5 L0 10 z" style="fill: var(--sand-dim)"/>
               </marker>
             </defs>
 
-            <text class="dg-lane" x="0" y="40">COMMIT</text>
-            <rect class="dg-box" x="100" y="18" width="170" height="40"/>
-            <text class="dg-txt" x="185" y="43" text-anchor="middle">push to branch</text>
+            <text class="dg-lane" x="0" y="46">SOURCE</text>
+            <rect class="dg-box" x="104" y="24" width="190" height="44"/>
+            <text class="dg-txt" x="199" y="43" text-anchor="middle">push to any branch</text>
+            <text class="dg-sub" x="199" y="58" text-anchor="middle">feature, release, hotfix</text>
 
-            <path class="dg-line" d="M185 58 V78 H240 V96" marker-end="url(#rp)"/>
-            <path class="dg-line" d="M185 58 V78 H560 V96" marker-end="url(#rp)"/>
+            <path class="dg-line" d="M294 46 H330" marker-end="url(#ra)"/>
+            <rect class="dg-box" x="334" y="24" width="220" height="44"/>
+            <text class="dg-txt" x="444" y="43" text-anchor="middle">Jenkins multibranch</text>
+            <text class="dg-sub" x="444" y="58" text-anchor="middle">discovers branches, no job per branch</text>
+
+            <path class="dg-line" d="M444 68 V96" marker-end="url(#ra)"/>
 
             <text class="dg-lane" x="0" y="122">BUILD</text>
-            <rect class="dg-box" x="150" y="100" width="180" height="40"/>
-            <text class="dg-txt" x="240" y="125" text-anchor="middle">Jenkins multibranch</text>
-            <text class="dg-note" x="150" y="156">older services</text>
+            <rect class="dg-box" x="334" y="100" width="220" height="40"/>
+            <text class="dg-txt" x="444" y="125" text-anchor="middle">build + test</text>
+            <path class="dg-dash" d="M554 120 H660" marker-end="url(#rb)"/>
+            <text class="dg-note" x="566" y="114">fails</text>
+            <rect class="dg-box" x="664" y="100" width="180" height="40" style="stroke: var(--sand-dim)"/>
+            <text class="dg-txt" x="754" y="125" text-anchor="middle">stop, nothing deploys</text>
 
-            <rect class="dg-box" x="470" y="100" width="180" height="40"/>
-            <text class="dg-txt" x="560" y="125" text-anchor="middle">GitHub Actions</text>
-            <text class="dg-note" x="470" y="156">newer repositories</text>
+            <path class="dg-line" d="M444 140 V168" marker-end="url(#ra)"/>
 
-            <path class="dg-line" d="M240 140 V176 H380 V194" marker-end="url(#rp)"/>
-            <path class="dg-line" d="M560 140 V176 H420 V194" marker-end="url(#rp)"/>
+            <text class="dg-lane" x="0" y="194">DEPLOY</text>
+            <rect class="dg-box" x="334" y="172" width="220" height="44"/>
+            <text class="dg-txt" x="444" y="191" text-anchor="middle">Ansistrano deploy</text>
+            <text class="dg-sub" x="444" y="206" text-anchor="middle">over the existing Ansible inventory</text>
 
-            <text class="dg-lane" x="0" y="220">ARTIFACT</text>
-            <rect class="dg-box" x="300" y="198" width="200" height="40"/>
-            <text class="dg-txt" x="400" y="223" text-anchor="middle">build + test</text>
+            <path class="dg-line" d="M444 216 V244" marker-end="url(#ra)"/>
 
-            <path class="dg-stop" d="M500 218 H636" marker-end="url(#rps)"/>
-            <text class="dg-note" x="512" y="212">test fails</text>
-            <rect class="dg-box" x="640" y="198" width="190" height="40" style="stroke: var(--sand-dim)"/>
-            <text class="dg-txt" x="735" y="223" text-anchor="middle">stop, no image</text>
+            <text class="dg-lane" x="0" y="272">ON HOST</text>
+            <rect class="dg-box" x="104" y="248" width="230" height="52"/>
+            <text class="dg-txt" x="219" y="268" text-anchor="middle">releases/2019-06-14-1042/</text>
+            <text class="dg-sub" x="219" y="284" text-anchor="middle">new code unpacked here</text>
 
-            <path class="dg-line" d="M300 218 H180 V254" marker-end="url(#rp)"/>
+            <rect class="dg-box" x="354" y="248" width="200" height="52"/>
+            <text class="dg-txt" x="454" y="268" text-anchor="middle">shared/</text>
+            <text class="dg-sub" x="454" y="284" text-anchor="middle">config, uploads, logs</text>
 
-            <text class="dg-lane" x="0" y="286">SHIP</text>
-            <rect class="dg-box" x="100" y="258" width="180" height="40"/>
-            <text class="dg-txt" x="190" y="283" text-anchor="middle">tagged image</text>
-            <path class="dg-line" d="M280 278 H316" marker-end="url(#rp)"/>
-            <rect class="dg-box" x="320" y="258" width="200" height="40"/>
-            <text class="dg-txt" x="420" y="283" text-anchor="middle">kubectl apply</text>
-            <path class="dg-line" d="M520 278 H556" marker-end="url(#rp)"/>
-            <rect class="dg-box" x="560" y="258" width="270" height="40"/>
-            <text class="dg-txt" x="695" y="283" text-anchor="middle">running service &middot; Prometheus + Grafana</text>
+            <rect class="dg-box" x="574" y="248" width="270" height="52" style="stroke: var(--sand-dim)"/>
+            <text class="dg-txt" x="709" y="268" text-anchor="middle">current &rarr; releases/...</text>
+            <text class="dg-sub" x="709" y="284" text-anchor="middle">one symlink swap is the cutover, and the rollback</text>
           </svg>
         </div>
       </div>
@@ -167,66 +169,100 @@
     <div class="cs-block">
       <h2>Implementation</h2>
       <ul>
-        <li><strong>One trigger model.</strong> A push to the tracked branch starts the build. No manual job runs as the normal path, because a manual path is where procedures start diverging again.</li>
-        <li><strong>Build and test in the same run.</strong> A failing test stops the pipeline before an image exists, so a broken build cannot be deployed by mistake.</li>
-        <li><strong>Tagged images, not "latest".</strong> Each build produces an image identified by its commit, which is what makes "what is running in production right now" an answerable question and a rollback a matter of applying a previous tag.</li>
-        <li><strong>Deployment applies manifests.</strong> Kubernetes manifests applied with kubectl, kept alongside the service rather than in someone's shell history.</li>
-        <li><strong>Jenkinsfile in the repository</strong> for the Jenkins-side services, so the pipeline definition is versioned with the code it builds instead of living in the Jenkins UI.</li>
+        <li><strong>Multibranch, so every branch builds the same way.</strong> Jenkins discovers branches itself and applies one pipeline definition to all of them. Nobody creates a job when a branch appears, so nobody forgets to, and a feature branch is tested by the same steps that will eventually deploy it.</li>
+        <li><strong>The pipeline definition lives in the repository.</strong> A Jenkinsfile beside the code, versioned with it, rather than configuration clicked into the Jenkins UI where it has no history and no review.</li>
+        <li><strong>Ansistrano for the deploy, over the inventory we already had.</strong> It builds on Ansible, which was already how these hosts were configured, so deployment used the same connection method, the same inventory and the same credentials as everything else. No second access path to secure.</li>
+        <li><strong>A release directory per deploy.</strong> Each deployment unpacks into its own timestamped directory. Nothing overwrites the running code, which means the previous release is still sitting there, intact, at the moment the new one goes live.</li>
+        <li><strong>Shared state stays out of releases.</strong> Configuration, uploads and logs live in a shared directory linked into each release, so they survive a deploy and a rollback rather than being replaced by whatever the new release shipped with.</li>
+        <li><strong>The cutover is a symlink.</strong> The web server serves a path that is a symlink to the current release. Deploying points it at the new directory. That is the entire switch: near-atomic, and the state before it is still on disk.</li>
+        <li><strong>A branching and release plan around it.</strong> Which branches deploy where, what gets cut for a release, how a hotfix reaches production without dragging unfinished work with it. The pipeline only helps if the team's workflow and the pipeline agree about what a release is.</li>
       </ul>
-      <pre class="term"><span class="c"># the shape of it, per service</span>
-push to branch
-  <span class="k">&rarr;</span> build + unit tests        <span class="c"># fails here, nothing ships</span>
-  <span class="k">&rarr;</span> docker build, tag by commit
-  <span class="k">&rarr;</span> push to registry
-  <span class="k">&rarr;</span> kubectl apply manifests
-  <span class="k">&rarr;</span> watch rollout, alert on failure</pre>
+
+      <pre class="term"><span class="c"># what a host looked like after a few deploys</span>
+/var/www/app/
+  releases/
+    2019-06-11-0917/
+    2019-06-13-1530/
+    2019-06-14-1042/   <span class="c"># newest</span>
+  shared/              <span class="c"># config, uploads, logs - survive deploys</span>
+  current <span class="k">-&gt;</span> releases/2019-06-14-1042/
+
+<span class="c"># rollback</span>
+current <span class="k">-&gt;</span> releases/2019-06-13-1530/     <span class="c"># one symlink, seconds</span></pre>
+    </div>
+
+    <div class="cs-block">
+      <h2>Why rollback was the point</h2>
+      <p>
+        Most of the value here is not in deploying faster. It is in the fact that going back is a
+        symlink swap against a directory that is already on disk, already unpacked, already the
+        exact bytes that were working ten minutes ago.
+      </p>
+      <p>
+        The alternative, redeploying a previous commit, is a build. It pulls dependencies that may
+        have moved, runs steps that may behave differently, and produces something you believe is
+        the old version rather than something you know is. Under incident pressure, the difference
+        between those two is the difference between a two minute recovery and an unbounded one.
+      </p>
     </div>
 
     <div class="cs-block">
       <h2>Security</h2>
       <ul>
-        <li><strong>Secrets injected at run time</strong> from the CI system's own credential store, never committed and never baked into an image.</li>
-        <li><strong>Scoped deploy credentials.</strong> The pipeline's access is limited to what deploying requires, rather than reusing an administrative identity because it was convenient.</li>
-        <li><strong>Registry access controlled</strong>, so images are pulled by the cluster rather than being publicly readable.</li>
-        <li><strong>Review before merge</strong> as the gate. The pipeline enforces that what deploys is what was reviewed, which only holds if the branch is protected.</li>
+        <li><strong>Deploys used the existing Ansible access path</strong>, key-based SSH to hosts that already had a configuration baseline. No second credential set to manage or rotate.</li>
+        <li><strong>Configuration out of the repository.</strong> Application config lives in the shared directory on the host, not in the release, so credentials are not in source control and not in a build artifact.</li>
+        <li><strong>Credentials held by Jenkins</strong> and injected at run time rather than written into the pipeline definition, which is in the repository and therefore readable by anyone who can read the code.</li>
       </ul>
     </div>
 
     <div class="cs-block">
       <h2>Monitoring</h2>
       <p>
-        A deployment is not finished when the pipeline goes green. Rollout status is watched after
-        apply, and the service's own metrics in Prometheus and dashboards in Grafana are what tell
-        us whether the new version is actually healthy rather than merely started. A failed build
-        or failed rollout raises an alert on the same path as any production alert, because a
-        build system nobody notices failing quietly stops being a control.
+        Build and deploy results were visible in Jenkins per branch, so a failing branch was
+        obvious without anyone going looking. On the host side, the existing monitoring covered
+        whether the application was actually serving after a deploy, which is the check that
+        matters: a deploy can succeed and the service can still be down, and only the second one
+        is what users experience.
       </p>
     </div>
 
     <div class="cs-block">
       <h2>Result</h2>
       <ul>
-        <li><strong>Deployment became a pipeline run</strong> rather than a set of remembered steps, which was the whole point.</li>
-        <li><strong>Every release has a build record attached to a commit</strong>, so what is running and what changed are both answerable.</li>
-        <li><strong>Rollback is applying a previous tag</strong> instead of reconstructing a previous state.</li>
-        <li><strong>A broken build cannot reach production</strong>, because the artifact is never produced.</li>
+        <li><strong>Deployment stopped depending on who remembered the steps.</strong> That was the goal and it is the honest description of the outcome.</li>
+        <li><strong>Rollback became a symlink swap</strong> to a release still sitting on disk, rather than a rebuild under pressure.</li>
+        <li><strong>Every branch built the same way</strong>, so a branch was tested by the process that would eventually ship it.</li>
+        <li><strong>The pipeline had a history</strong>, because its definition lived in the repository with the code.</li>
       </ul>
       <p style="margin-top:14px">
-        I did not measure deployment time before and after, so I am not going to claim a
-        percentage improvement. The change that mattered was in who could deploy and how
-        repeatable it was, not in the clock.
+        I did not instrument deployment time before and after, so there is no percentage here.
+        What changed was who could deploy and how confidently they could undo it.
       </p>
     </div>
 
     <div class="cs-block">
       <h2>What I would do differently</h2>
       <p>
-        I would put the deployment step behind a proper environment promotion rather than letting
-        the same pipeline shape serve every target, and I would add an automated rollback trigger
-        on failed health checks instead of relying on someone watching the rollout. I would also
-        consolidate onto one CI system eventually, but as a planned migration with a reason, not
-        as a tidiness exercise in the middle of shipping.
+        I would add an automated health check after the symlink swap, with an automatic revert if
+        it fails, rather than relying on someone watching. The mechanism for rollback was already
+        there and fast; not wiring it to a check was leaving the best part of the design manual.
       </p>
+      <p>
+        I would also keep fewer releases on disk with an explicit retention rule. Release
+        directories accumulate quietly and, on a hosting server where disk is shared, that is a
+        slow leak that eventually becomes somebody's incident.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>Related public work</h2>
+      <p>
+        The Ansible and Jenkins notes behind this, with client detail removed, are being published
+        as repositories on GitHub.
+      </p>
+      <div class="actions">
+        <a class="btn" href="https://github.com/socialp630" target="_blank" rel="noopener">github.com/socialp630</a>
+      </div>
     </div>
 
   </div>
@@ -234,7 +270,7 @@ push to branch
 
 <section class="cs-next">
   <div class="wrap">
-    <a class="cs-link" href="incident-response.html">Next: LLM-assisted incident triage &rarr;</a>
+    <a class="cs-link" href="mcp-server.html">Back to: an MCP server in production &rarr;</a>
     <a class="back" style="margin:0" href="../index.html#projects">&larr; Back to all projects</a>
   </div>
 </section>

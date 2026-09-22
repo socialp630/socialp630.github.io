@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Auditing my own platform — Aneesh Satheesh</title>
+<meta name="description" content="An honest gap analysis of a production system I ran on a single VM with two people, and the migration I would do first.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230e1418'/%3E%3Cpath d='M7 11l5 5-5 5' fill='none' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M15 21h10' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .gap-table { width: 100%; border-collapse: collapse; font-size: 14.5px; margin-top: 18px; }
+  .gap-table th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--text-mute); font-weight: 500;
+    padding: 0 14px 8px 0; border-bottom: 1px solid var(--line);
+  }
+  .gap-table td { padding: 11px 14px 11px 0; border-bottom: 1px solid var(--line-soft); color: var(--text-dim); vertical-align: top; }
+  .gap-table td:first-child { color: var(--text); font-weight: 500; white-space: nowrap; }
+  .mark { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; white-space: nowrap; }
+  .mark-y { color: var(--teal); }
+  .mark-n { color: #c96a5a; }
+  .mark-p { color: var(--sand); }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="nav-id" href="../index.html">Aneesh Satheesh <span>/ infra</span></a>
+    <div class="nav-links">
+      <a href="../index.html#experience">Experience</a>
+      <a href="../index.html#skills">Skills</a>
+      <a href="../index.html#projects">Projects</a>
+      <a href="../index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<main id="main">
+
+<section class="hero cs-hero">
+  <div class="wrap">
+    <a class="back" href="../index.html#projects">&larr; All projects</a>
+    <p class="eyebrow">Case study 04 &middot; Analysis, not implementation</p>
+    <h1>Auditing a platform I ran, and naming what it did not have</h1>
+    <p class="lede">
+      A working production system, built and operated by two people under a funding pause. It
+      served real users for over a year. It also had no CI/CD, no infrastructure as code, and
+      alerting that never reached anyone. This is the inventory, why each gap existed, and
+      what I would fix first.
+    </p>
+
+    <div class="cs-facts">
+      <div><b>Where</b><span>Rail Tech Inc.</span></div>
+      <div><b>When</b><span>2024 &ndash; 2026</span></div>
+      <div><b>Team</b><span>Two people</span></div>
+      <div><b>Status</b><span>Analysis and design, not built</span></div>
+      <div><b>Scope</b><span>One Compute Engine VM, four services</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="cs-body">
+  <div class="wrap">
+
+    <div class="cs-block">
+      <h2>Why this page exists</h2>
+      <p>
+        Most portfolios describe what a system had. This one describes what mine did not have,
+        because that turned out to be the more useful thing to be able to discuss.
+      </p>
+      <p>
+        The platform worked. Real users, real traffic, uptime that was fine, a genuinely
+        uncommon piece of protocol engineering inside it. It was also, by any honest definition,
+        operations rather than DevOps: built by hand, deployed by hand, and monitored by someone
+        looking at a dashboard. Both of those statements are true at once, and being able to hold
+        them together is the point.
+      </p>
+      <div class="callout">
+        <b>Explicitly not implemented</b>
+        Everything in the "would do" column below is a design, not something I built. I left the
+        company before this work started. It is here because the analysis is mine and I can
+        defend every line of it, not because I am claiming the outcome.
+      </div>
+    </div>
+
+    <div class="cs-block cs-wide">
+      <h2>The inventory</h2>
+
+      <div style="overflow-x:auto">
+        <table class="gap-table">
+          <thead>
+            <tr><th>Practice</th><th>State</th><th>What was actually there</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Containerisation</td><td class="mark mark-y">present</td><td>Every service had its own Dockerfile</td></tr>
+            <tr><td>Orchestration</td><td class="mark mark-p">partial</td><td>Docker Compose on one host. No scheduler, no self-healing beyond restart policies</td></tr>
+            <tr><td>Reverse proxy &amp; TLS</td><td class="mark mark-y">present</td><td>Traefik with Let's Encrypt, ForwardAuth on protected routes</td></tr>
+            <tr><td>Edge protection</td><td class="mark mark-y">present</td><td>Cloudflare for DDoS and CDN, with the origin trusting only its ranges</td></tr>
+            <tr><td>Metrics</td><td class="mark mark-y">present</td><td>Prometheus and Grafana, running and useful</td></tr>
+            <tr><td>Alerting</td><td class="mark mark-n">absent</td><td>Alertmanager installed, but its receiver was a placeholder. No alert ever reached a person</td></tr>
+            <tr><td>Log aggregation</td><td class="mark mark-n">absent</td><td>Container logs on the host. Debugging meant SSH and <code>docker logs</code></td></tr>
+            <tr><td>Tracing</td><td class="mark mark-n">absent</td><td>Nothing</td></tr>
+            <tr><td>CI/CD</td><td class="mark mark-n">absent</td><td>SSH in, <code>git pull</code>, <code>docker compose build</code>, <code>up</code>. By hand, every time</td></tr>
+            <tr><td>Infrastructure as code</td><td class="mark mark-n">absent</td><td>The VM and its networking were configured by hand and existed only as themselves</td></tr>
+            <tr><td>Secrets management</td><td class="mark mark-n">absent</td><td>A <code>.env</code> file on the VM</td></tr>
+            <tr><td>Environments</td><td class="mark mark-n">absent</td><td>Production only. No staging, no way to test a change before users saw it</td></tr>
+            <tr><td>Rollback</td><td class="mark mark-n">absent</td><td>Manual. Scripts referenced in our own docs did not exist in the repository</td></tr>
+            <tr><td>Backups</td><td class="mark mark-n">absent</td><td>No verified backup or restore path for the primary datastore</td></tr>
+            <tr><td>High availability</td><td class="mark mark-n">absent</td><td>One VM. A single point of failure for everything</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cs-block">
+      <h2>Why the gaps existed</h2>
+      <p>
+        Not because nobody knew better. Two people, a funding pause, and a product that had to
+        exist before anything else mattered. Every hour spent on a deployment pipeline was an
+        hour not spent on the thing users were there for, and at that size the manual path is
+        genuinely cheaper right up until the moment it is not.
+      </p>
+      <p>
+        That reasoning is defensible for the first few months. It stops being defensible once the
+        system has real users, and the honest assessment is that we passed that point without
+        revisiting the decision. The cost was not an outage. It was that nobody could safely
+        deploy except the person who always deployed, and that a failure at 3am would have gone
+        unnoticed until somebody happened to look.
+      </p>
+      <div class="callout">
+        <b>The one that bothers me most</b>
+        Not the missing CI/CD. The alerting. Installing Prometheus, Grafana and Alertmanager and
+        then leaving the receiver as a placeholder is worse than having no monitoring at all,
+        because it looks like coverage. Anyone glancing at the stack would reasonably assume
+        failures were being surfaced. They were not.
+      </div>
+    </div>
+
+    <div class="cs-block">
+      <h2>What I would do, in order</h2>
+
+      <h3 style="font-size:16px; margin:24px 0 8px">1. Close the alerting loop</h3>
+      <p>
+        A real receiver, then alert rules that matter: host and container down, restart loops,
+        disk and inode usage, memory and swap, certificate expiry, 5xx rate at the proxy,
+        datastore availability. Then induce each failure deliberately and confirm the alert
+        arrives, because an untested alert rule is a guess.
+      </p>
+      <p>
+        First because it is the cheapest by far, it is entirely additive, and until it is done
+        every other improvement is being made to a system that cannot tell you when it is
+        broken.
+      </p>
+
+      <h3 style="font-size:16px; margin:24px 0 8px">2. Backups, with a tested restore</h3>
+      <p>
+        Scheduled dumps of the primary datastore to object storage with lifecycle rules, and
+        then, non-negotiably, a restore into a scratch instance to prove the backup is real. A
+        backup nobody has restored from is a hypothesis.
+      </p>
+      <p>
+        Second because it is the only gap on the list where the worst case is unrecoverable
+        rather than merely painful.
+      </p>
+
+      <h3 style="font-size:16px; margin:24px 0 8px">3. Secrets out of the <code>.env</code></h3>
+      <p>
+        Either a managed secrets service or encrypted secrets committed alongside the code with
+        keys held outside it. The specific tool matters less than the property: secrets stop
+        being a file that exists in exactly one place, on the host, with no history and no
+        rotation path.
+      </p>
+
+      <h3 style="font-size:16px; margin:24px 0 8px">4. Infrastructure as code</h3>
+      <p>
+        Terraform describing the VM, its networking and firewall rules, with state in object
+        storage. The immediate value is not automation, it is that the infrastructure stops
+        existing only as itself. Right now, if that VM is lost, rebuilding it means remembering.
+      </p>
+      <p>
+        This also makes the next step affordable, because a staging environment you can create
+        and destroy on demand costs almost nothing compared to one that runs permanently.
+      </p>
+
+      <h3 style="font-size:16px; margin:24px 0 8px">5. A pipeline, and a staging environment to point it at</h3>
+      <p>
+        Build and test on push, produce a tagged image, deploy to staging automatically and to
+        production on approval. Tagged images rather than rebuilding on the host, so what was
+        tested is what runs and a rollback is applying a previous tag.
+      </p>
+      <p>
+        Fifth rather than first, deliberately. A pipeline that deploys straight to production
+        with no environment to catch anything is faster manual deployment, not safer deployment.
+      </p>
+
+      <h3 style="font-size:16px; margin:24px 0 8px">6. Log aggregation</h3>
+      <p>
+        Shipping container and proxy logs somewhere queryable, so an error rate spike on a
+        dashboard can be clicked through to the lines behind it. Lower down the list than it
+        might look, because with four services on one host, <code>docker logs</code> is slow but
+        it does work. It becomes urgent the moment there is more than one host.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>What I would not do</h2>
+      <p>
+        <strong>Kubernetes.</strong> Four services on one VM with two engineers is not a
+        Kubernetes problem. Adopting it would add a control plane, a networking model and an
+        upgrade cadence to a team that did not have capacity to wire up an alert receiver. The
+        honest sequence is to fix deployment and observability first, and revisit orchestration
+        when the number of services or the availability requirement actually demands it.
+      </p>
+      <p>
+        <strong>Multi-region, or high availability, yet.</strong> A single VM is a real risk, but
+        it is a smaller risk than having no tested backup. Removing the single point of failure
+        before you can restore from one is solving the second problem first.
+      </p>
+      <p>
+        <strong>Rewriting anything that works.</strong> Traefik, the auth path and the MCP server
+        were fine. The gaps were around the system, not inside it.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>What I took from it</h2>
+      <ul>
+        <li><strong>An installed tool is not an implemented practice.</strong> Alertmanager was running for over a year and did nothing. The check is not whether it is up, it is whether it has ever produced the outcome it exists for.</li>
+        <li><strong>Constraints justify a decision, not its permanence.</strong> Deploying by hand was right at the start and wrong later, and nothing forced a re-examination because it kept working.</li>
+        <li><strong>Backups are the only gap where the worst case is final.</strong> Everything else on that list costs time. That one can cost the product.</li>
+        <li><strong>Knowing what a system lacks is a skill.</strong> Being able to produce this list about my own work, without being prompted by an incident, is the thing I would most want to demonstrate to anyone hiring me.</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<section class="cs-next">
+  <div class="wrap">
+    <a class="cs-link" href="mcp-server.html">Back to: an MCP server in production &rarr;</a>
+    <a class="back" style="margin:0" href="../index.html#projects">&larr; Back to all projects</a>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>Aneesh Satheesh &middot; DevOps &amp; Infrastructure Engineer</span>
+    <span><a href="mailto:anzsat21@gmail.com">anzsat21@gmail.com</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

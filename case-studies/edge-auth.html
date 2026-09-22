@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Edge-to-service authentication — Aneesh Satheesh</title>
+<meta name="description" content="Case study: authenticating browser users and programmatic clients once at the proxy with Traefik ForwardAuth, behind Cloudflare, without trusting the edge blindly.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230e1418'/%3E%3Cpath d='M7 11l5 5-5 5' fill='none' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M15 21h10' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .dg-box  { fill: var(--surface-2); stroke: var(--line); stroke-width: 1; rx: 3; }
+  .dg-txt  { fill: var(--text-dim); font-family: var(--mono); font-size: 12px; }
+  .dg-sub  { fill: var(--text-mute); font-family: var(--mono); font-size: 10.5px; }
+  .dg-lane { fill: var(--sand); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; font-weight: 600; }
+  .dg-line { stroke: var(--text-mute); stroke-width: 1.2; fill: none; }
+  .dg-dash { stroke: var(--sand-dim); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+  .dg-note { fill: var(--text-mute); font-family: var(--mono); font-size: 10.5px; }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="nav-id" href="../index.html">Aneesh Satheesh <span>/ infra</span></a>
+    <div class="nav-links">
+      <a href="../index.html#experience">Experience</a>
+      <a href="../index.html#skills">Skills</a>
+      <a href="../index.html#projects">Projects</a>
+      <a href="../index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<main id="main">
+
+<section class="hero cs-hero">
+  <div class="wrap">
+    <a class="back" href="../index.html#projects">&larr; All projects</a>
+    <p class="eyebrow">Case study 02 &middot; Edge and authentication</p>
+    <h1>Deciding authentication once, at the proxy</h1>
+    <p class="lede">
+      Two client types with nothing in common: people signing in with Google, and programmatic
+      clients holding an API key. One place to decide whether a request gets through, and a
+      deliberate refusal to fully trust that decision.
+    </p>
+
+    <div class="cs-facts">
+      <div><b>Where</b><span>Rail Tech Inc.</span></div>
+      <div><b>When</b><span>2025 &ndash; 2026</span></div>
+      <div><b>Scope</b><span>Every protected route on the platform</span></div>
+      <div><b>My role</b><span>Owned the edge and auth path</span></div>
+      <div><b>Stack</b><span>Traefik v2.11, Cloudflare, Node/Express, Google OAuth, JWT</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="cs-body">
+  <div class="wrap">
+
+    <div class="cs-block">
+      <h2>Problem</h2>
+      <p>
+        The platform had three services written in three languages, and two entirely different
+        kinds of caller. A browser user signs in with Google and expects a session. A programmatic
+        client holds a long-lived API key and expects to present it on every call.
+      </p>
+      <p>
+        The obvious approach is for each service to check credentials itself. With three services
+        that means three implementations of the same security-critical logic, three places for a
+        bug to live, and three things to update when the rules change. On a two-person team that
+        is not a theoretical risk.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>Environment</h2>
+      <ul>
+        <li><strong>Three backend services:</strong> a Go tagging service, a Python tag extraction service, and a Node auth service.</li>
+        <li><strong>Traefik v2.11</strong> already terminating TLS with Let's Encrypt and routing to those containers.</li>
+        <li><strong>Cloudflare in front</strong> for edge caching and DDoS protection.</li>
+        <li><strong>A React frontend on Vercel</strong>, served separately from the API.</li>
+        <li><strong>All backend containers</strong> on one Docker Compose bridge network on a single VM.</li>
+      </ul>
+    </div>
+
+    <div class="cs-block">
+      <h2>Constraints</h2>
+      <ul>
+        <li><strong>One decision point.</strong> Authentication had to be decided in exactly one place, or it would drift between services.</li>
+        <li><strong>But not a single point of failure.</strong> If the one decision point is misconfigured, everything behind it is open. That tension is the interesting part of this design.</li>
+        <li><strong>Long-lived streams do not fit per-request auth.</strong> The MCP endpoint had to be handled differently and deliberately, not accidentally.</li>
+        <li><strong>The real client IP had to survive the edge.</strong> Everything downstream that cares about who is calling depends on it.</li>
+      </ul>
+    </div>
+
+    <div class="cs-block cs-wide">
+      <h2>Architecture</h2>
+
+      <div class="diagram-box" style="margin-top:20px">
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 880 300" role="img" aria-labelledby="eat ead">
+            <title id="eat">ForwardAuth request flow</title>
+            <desc id="ead">A request arrives from Cloudflare into Traefik. Traefik forwards it to the jwt-verifier service's verify endpoint before routing. A 200 response lets the request continue to the application container; a 401 stops it at the proxy. Browser users obtain a JWT by signing in with Google; programmatic clients exchange an API key for a short-lived JWT. The MCP route bypasses ForwardAuth and validates its bearer token at connection time instead.</desc>
+            <defs>
+              <marker id="ea" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" style="fill: var(--text-mute)"/>
+              </marker>
+              <marker id="eb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" style="fill: var(--sand-dim)"/>
+              </marker>
+            </defs>
+
+            <text class="dg-lane" x="0" y="46">REQUEST</text>
+            <rect class="dg-box" x="104" y="24" width="160" height="44"/>
+            <text class="dg-txt" x="184" y="43" text-anchor="middle">Cloudflare</text>
+            <text class="dg-sub" x="184" y="58" text-anchor="middle">real client IP forwarded</text>
+
+            <path class="dg-line" d="M264 46 H300" marker-end="url(#ea)"/>
+            <rect class="dg-box" x="304" y="24" width="180" height="44"/>
+            <text class="dg-txt" x="394" y="43" text-anchor="middle">Traefik</text>
+            <text class="dg-sub" x="394" y="58" text-anchor="middle">trusts CF ranges only</text>
+
+            <path class="dg-line" d="M484 46 H520" marker-end="url(#ea)"/>
+            <rect class="dg-box" x="524" y="24" width="180" height="44"/>
+            <text class="dg-txt" x="614" y="43" text-anchor="middle">ForwardAuth</text>
+            <text class="dg-sub" x="614" y="58" text-anchor="middle">jwt-verifier /verify</text>
+
+            <path class="dg-line" d="M614 68 V96" marker-end="url(#ea)"/>
+            <text class="dg-lane" x="0" y="122">DECISION</text>
+            <rect class="dg-box" x="464" y="100" width="300" height="40" style="stroke: var(--sand-dim)"/>
+            <text class="dg-txt" x="614" y="125" text-anchor="middle">valid JWT?</text>
+
+            <path class="dg-line" d="M514 140 V168 H330" marker-end="url(#ea)"/>
+            <text class="dg-note" x="420" y="160">200</text>
+            <path class="dg-dash" d="M714 140 V168 H790" marker-end="url(#eb)"/>
+            <text class="dg-note" x="726" y="160">401</text>
+
+            <text class="dg-lane" x="0" y="196">OUTCOME</text>
+            <rect class="dg-box" x="104" y="174" width="230" height="44"/>
+            <text class="dg-txt" x="219" y="193" text-anchor="middle">application container</text>
+            <text class="dg-sub" x="219" y="208" text-anchor="middle">middleware re-checks anyway</text>
+
+            <rect class="dg-box" x="700" y="174" width="174" height="44"/>
+            <text class="dg-txt" x="787" y="201" text-anchor="middle">stopped at the proxy</text>
+
+            <text class="dg-lane" x="0" y="256">TOKENS</text>
+            <rect class="dg-box" x="104" y="234" width="340" height="44"/>
+            <text class="dg-txt" x="274" y="253" text-anchor="middle">browser: Google ID token &rarr; first-party JWT</text>
+            <text class="dg-sub" x="274" y="268" text-anchor="middle">verified with google-auth-library</text>
+
+            <rect class="dg-box" x="470" y="234" width="404" height="44"/>
+            <text class="dg-txt" x="672" y="253" text-anchor="middle">programmatic: API key &rarr; short-lived JWT</text>
+            <text class="dg-sub" x="672" y="268" text-anchor="middle">MCP route bypasses ForwardAuth, validates at connection time</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="cs-block">
+      <h2>Implementation</h2>
+      <ul>
+        <li><strong>ForwardAuth as the gate.</strong> Traefik sends every protected request to the verifier's endpoint first. A 200 lets it continue to the application container; anything else stops it at the proxy. The application containers never see an unauthenticated request on those routes.</li>
+        <li><strong>Two ways in, one token out.</strong> Browser users sign in with Google, their ID token is verified, and they receive a first-party JWT. Programmatic clients exchange an API key for a short-lived JWT. Downstream, both look the same, so nothing behind the proxy needs to know which path a caller came through.</li>
+        <li><strong>Short-lived tokens from long-lived keys.</strong> The API key is the thing a user stores; the JWT is what travels. A leaked token expires on its own, a leaked key can be revoked.</li>
+        <li><strong>Traefik trusts only Cloudflare's ranges</strong> for forwarded headers. Without that, anyone reaching the origin directly could assert whatever client IP they liked, and every decision downstream that uses the client address would be built on a value the caller chose.</li>
+        <li><strong>The MCP route is a deliberate exception,</strong> documented as one. A stream that opens once and lives for hours cannot be re-verified per request, so it validates its bearer token at connection time. The important thing is that this is a decision with a reason, not a gap someone left.</li>
+      </ul>
+    </div>
+
+    <div class="cs-block">
+      <h2>Defence in depth, and why the duplication is on purpose</h2>
+      <p>
+        The service middleware repeats work Traefik has already done. The chain runs logging,
+        CORS, security headers, input validation, threat detection, rate limiting, and then JWT
+        verification again, on requests that have already passed ForwardAuth.
+      </p>
+      <p>
+        That looks redundant and it is, intentionally. The single decision point is the design's
+        strength and its weakness at once: one misconfigured Traefik router, one route added
+        without the middleware attached, and everything behind it is exposed. Re-checking inside
+        the service means a proxy mistake produces a rejected request rather than an open door.
+        The cost is a few microseconds per request. The alternative cost is the whole platform.
+      </p>
+      <div class="callout">
+        <b>The ordering matters</b>
+        Cheap rejections come first. There is no point spending a JWT verification on a request
+        that fails input validation, and no point rate-limiting a request that CORS will reject.
+        The chain is arranged so the most expensive check is the last one a request reaches.
+      </div>
+    </div>
+
+    <div class="cs-block">
+      <h2>Rate limiting by user, not by address</h2>
+      <p>
+        The default for rate limiting is to key on IP. Behind Cloudflare that is actively wrong.
+        The edge collapses many real users behind a small set of addresses, so an IP-keyed limit
+        throttles a shared address: the abuser and everyone who happens to exit through the same
+        Cloudflare node.
+      </p>
+      <p>
+        Keying on user ID works because, by the time a request has passed ForwardAuth, there is
+        an authenticated identity to key on. The limit then applies to the account doing the
+        work, which is the thing you actually want to limit.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>Known gaps</h2>
+      <p>
+        Two I would name before anyone asked. The Cloudflare IP allowlist is hardcoded with no
+        automated refresh, so when Cloudflare publishes new ranges the configuration is silently
+        stale until someone updates it by hand. That should be a scheduled job that fetches the
+        published list and reloads, and it is not.
+      </p>
+      <p>
+        Secrets lived in a <code>.env</code> file on the VM rather than in a secrets manager.
+        That is the single change I would make first if I were still running this.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>Result</h2>
+      <ul>
+        <li><strong>One place where authentication is decided</strong>, and one service to change when the rules change.</li>
+        <li><strong>Two credential types, one downstream identity</strong>, so services do not carry auth branching.</li>
+        <li><strong>A proxy misconfiguration is not a breach</strong>, because the services still check.</li>
+        <li><strong>Rate limits that land on the right account</strong> instead of on a shared edge address.</li>
+      </ul>
+    </div>
+
+    <div class="cs-block">
+      <h2>What I would do differently</h2>
+      <p>
+        The allowlist refresh should have been automated from the start; it is a small job that
+        turns into a confusing outage the day it matters. I would also have put a test in front
+        of the routing configuration that asserts every protected route actually has the
+        middleware attached, because the failure mode of this design is a route quietly added
+        without it, and that is exactly the kind of thing a test catches and a person does not.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<section class="cs-next">
+  <div class="wrap">
+    <a class="cs-link" href="platform-gaps.html">Next: the gap analysis for this platform &rarr;</a>
+    <a class="back" style="margin:0" href="../index.html#projects">&larr; Back to all projects</a>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>Aneesh Satheesh &middot; DevOps &amp; Infrastructure Engineer</span>
+    <span><a href="mailto:anzsat21@gmail.com">anzsat21@gmail.com</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

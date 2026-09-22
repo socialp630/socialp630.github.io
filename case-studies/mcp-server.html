@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>An MCP server in production — Aneesh Satheesh</title>
+<meta name="description" content="Case study: running a Model Context Protocol server on two transports behind a CDN, and the idle-timeout bug that was silently dropping client connections.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230e1418'/%3E%3Cpath d='M7 11l5 5-5 5' fill='none' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M15 21h10' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .dg-box  { fill: var(--surface-2); stroke: var(--line); stroke-width: 1; rx: 3; }
+  .dg-txt  { fill: var(--text-dim); font-family: var(--mono); font-size: 12px; }
+  .dg-sub  { fill: var(--text-mute); font-family: var(--mono); font-size: 10.5px; }
+  .dg-lane { fill: var(--sand); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; font-weight: 600; }
+  .dg-line { stroke: var(--text-mute); stroke-width: 1.2; fill: none; }
+  .dg-bad  { stroke: #c96a5a; stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+  .dg-note { fill: var(--sand); font-family: var(--mono); font-size: 10.5px; }
+  .dg-badt { fill: #c96a5a; font-family: var(--mono); font-size: 10.5px; }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="nav-id" href="../index.html">Aneesh Satheesh <span>/ infra</span></a>
+    <div class="nav-links">
+      <a href="../index.html#experience">Experience</a>
+      <a href="../index.html#skills">Skills</a>
+      <a href="../index.html#projects">Projects</a>
+      <a href="../index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<main id="main">
+
+<section class="hero cs-hero">
+  <div class="wrap">
+    <a class="back" href="../index.html#projects">&larr; All projects</a>
+    <p class="eyebrow">Case study 01 &middot; Protocol infrastructure</p>
+    <h1>Running an MCP server on two transports, behind a CDN</h1>
+    <p class="lede">
+      The protocol work was the straightforward part. The part worth writing down is the
+      failure that produced no error on either side: clients going quiet and never coming
+      back, and why the CDN in front was responsible.
+    </p>
+
+    <div class="cs-facts">
+      <div><b>Where</b><span>Rail Tech Inc.</span></div>
+      <div><b>When</b><span>2025 &ndash; 2026</span></div>
+      <div><b>Clients</b><span>Claude Desktop, Cursor, Claude Code</span></div>
+      <div><b>My role</b><span>Built and operated it</span></div>
+      <div><b>Stack</b><span>Go, Fiber, mcp-go, SSE, Streamable HTTP</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="cs-body">
+  <div class="wrap">
+
+    <div class="cs-block">
+      <h2>Problem</h2>
+      <p>
+        The platform stored and retrieved memory for AI coding tools. Reaching it meant every
+        client writing an integration against our own API, which is a cost we were asking each
+        user to pay before they got any value.
+      </p>
+      <p>
+        The Model Context Protocol solves that: a tool that speaks MCP is reachable from any MCP
+        client without either side knowing about the other in advance. The complication was
+        timing. The protocol was mid-transition between transports: an older SSE-based transport
+        that deployed clients still used, and a newer Streamable HTTP transport that newer ones
+        preferred. Picking one would have cut off half the audience.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>Environment</h2>
+      <ul>
+        <li><strong>A Go service</strong> built on Fiber, already holding the tag graph and retrieval logic the MCP tools would need to call.</li>
+        <li><strong>Traefik in front</strong> for routing and TLS, with ForwardAuth handling authentication for the rest of the platform.</li>
+        <li><strong>Cloudflare in front of that</strong> as the edge layer.</li>
+        <li><strong>One Compute Engine VM</strong> running everything under Docker Compose.</li>
+      </ul>
+    </div>
+
+    <div class="cs-block">
+      <h2>Constraints</h2>
+      <ul>
+        <li><strong>Both transports, one endpoint.</strong> A separate URL per transport pushes the problem onto the user, who has to know which one their client speaks.</li>
+        <li><strong>No flag day.</strong> Existing connected clients could not be asked to reconfigure.</li>
+        <li><strong>Authentication had to work for long-lived streams.</strong> The platform's per-request ForwardAuth model does not fit a connection that opens once and stays open.</li>
+        <li><strong>The tools had to be genuinely useful in one call.</strong> An MCP tool that needs three round trips to do anything gets ignored by the model calling it.</li>
+      </ul>
+    </div>
+
+    <div class="cs-block">
+      <h2>Implementation</h2>
+      <ul>
+        <li><strong>Both transports on the same route prefix.</strong> The server negotiates based on how the client connects rather than which URL it was given, so one address in a client's config works either way.</li>
+        <li><strong>Three tools, each complete on its own:</strong> save a memory, retrieve and inject the relevant ones into the caller's context, and record feedback on whether what came back was useful. That third one feeds the retrieval learning loop, which is why it is a tool and not an internal detail.</li>
+        <li><strong>Token validated at connection time.</strong> The MCP server checks the bearer token itself when the connection opens, rather than going through the proxy's ForwardAuth, because a stream that lives for hours is authenticated once, not per message.</li>
+        <li><strong>Built on the mcp-go library</strong> rather than implementing the wire format, so protocol changes arrive as a dependency bump instead of a rewrite.</li>
+      </ul>
+    </div>
+
+    <div class="cs-block cs-wide">
+      <h2>The failure worth writing down</h2>
+      <p>
+        Clients would connect, work normally, and then stop receiving anything. No error. No
+        disconnect event the client surfaced. The stream was simply dead, and only a restart of
+        the client brought it back. Roughly a hundred seconds of quiet was the pattern, but it
+        took a while to see the pattern at all, because an active user never hit it.
+      </p>
+
+      <div class="diagram-box" style="margin-top:20px">
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 880 250" role="img" aria-labelledby="mct mcd">
+            <title id="mct">Where the SSE connection was being dropped</title>
+            <desc id="mcd">An MCP client connects through Cloudflare and Traefik to the MCP server. A direct connection bypassing Cloudflare stayed open. The connection through Cloudflare was closed after about 100 seconds of no traffic, because an idle server-sent-events stream looks like an idle connection. A 25 second keepalive from the server keeps traffic flowing inside that window.</desc>
+            <defs>
+              <marker id="ma" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" style="fill: var(--text-mute)"/>
+              </marker>
+              <marker id="mb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" style="fill: #c96a5a"/>
+              </marker>
+            </defs>
+
+            <text class="dg-lane" x="0" y="52">PROXIED</text>
+            <rect class="dg-box" x="104" y="30" width="160" height="44"/>
+            <text class="dg-txt" x="184" y="49" text-anchor="middle">MCP client</text>
+            <text class="dg-sub" x="184" y="64" text-anchor="middle">SSE stream open</text>
+
+            <path class="dg-line" d="M264 52 H300" marker-end="url(#ma)"/>
+            <rect class="dg-box" x="304" y="30" width="170" height="44"/>
+            <text class="dg-txt" x="389" y="49" text-anchor="middle">Cloudflare</text>
+            <text class="dg-sub" x="389" y="64" text-anchor="middle">~100s idle timeout</text>
+
+            <path class="dg-line" d="M474 52 H510" marker-end="url(#ma)"/>
+            <rect class="dg-box" x="514" y="30" width="150" height="44"/>
+            <text class="dg-txt" x="589" y="57" text-anchor="middle">Traefik</text>
+
+            <path class="dg-line" d="M664 52 H700" marker-end="url(#ma)"/>
+            <rect class="dg-box" x="704" y="30" width="170" height="44"/>
+            <text class="dg-txt" x="789" y="49" text-anchor="middle">MCP server</text>
+            <text class="dg-sub" x="789" y="64" text-anchor="middle">Go / Fiber</text>
+
+            <path class="dg-bad" d="M389 74 V104" marker-end="url(#mb)"/>
+            <text class="dg-badt" x="400" y="96">no traffic for ~100s &rarr; connection closed, no error either side</text>
+
+            <text class="dg-lane" x="0" y="152">DIRECT</text>
+            <rect class="dg-box" x="104" y="130" width="160" height="44"/>
+            <text class="dg-txt" x="184" y="157" text-anchor="middle">MCP client</text>
+            <path class="dg-line" d="M264 152 H700" marker-end="url(#ma)"/>
+            <text class="dg-note" x="380" y="145">bypassing Cloudflare: stream held indefinitely</text>
+            <rect class="dg-box" x="704" y="130" width="170" height="44"/>
+            <text class="dg-txt" x="789" y="157" text-anchor="middle">MCP server</text>
+
+            <text class="dg-lane" x="0" y="212">FIX</text>
+            <rect class="dg-box" x="104" y="190" width="770" height="44" style="stroke: var(--sand-dim)"/>
+            <text class="dg-txt" x="489" y="209" text-anchor="middle">25 second keepalive written to the SSE stream</text>
+            <text class="dg-sub" x="489" y="224" text-anchor="middle">traffic every 25s keeps the connection inside the ~100s window, with margin for a missed tick</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="cs-block">
+      <h2>Investigation</h2>
+      <ul>
+        <li><strong>No error meant it was not the application.</strong> An application-level failure leaves something behind: a log line, a panic, a closed-with-reason. There was nothing, which pointed at something in the path closing the socket without telling either end.</li>
+        <li><strong>Split the path.</strong> Connected directly to the service, bypassing Cloudflare, and left it idle. The stream held. Connected through Cloudflare and left it idle, and it died. That isolated it to the edge in one test.</li>
+        <li><strong>Matched the timing to the documented behaviour.</strong> Cloudflare closes a proxied connection that has carried no traffic for around a hundred seconds. An SSE stream with nothing to send is, from the outside, indistinguishable from a connection nobody is using.</li>
+      </ul>
+      <div class="callout">
+        <b>Why this is easy to miss</b>
+        It is not a bug in the protocol, the library, or the application, and none of their
+        documentation mentions it. It only exists at the intersection of a long-lived stream and
+        an intermediary with an idle policy, and it only shows up when a user goes quiet, which
+        is exactly when nobody is watching.
+      </div>
+    </div>
+
+    <div class="cs-block">
+      <h2>Fix</h2>
+      <p>
+        A 25 second keepalive written to the SSE stream. The interval is deliberately well inside
+        the timeout rather than close to it: at roughly a quarter of the window, three consecutive
+        ticks can be delayed or lost and the connection still survives. Setting it at 90 seconds
+        would technically satisfy the timeout and would fail the first time anything hiccuped.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>Security</h2>
+      <ul>
+        <li><strong>Bearer token checked at connection time</strong> by the MCP server itself, since the platform's per-request ForwardAuth model does not apply to a persistent stream.</li>
+        <li><strong>API keys exchanged for short-lived JWTs</strong> rather than the long-lived key travelling with every call.</li>
+        <li><strong>Rate limiting keyed to user ID</strong>, which matters more here than elsewhere because MCP traffic arrives from a small number of client applications.</li>
+      </ul>
+    </div>
+
+    <div class="cs-block">
+      <h2>Monitoring</h2>
+      <p>
+        Prometheus and Grafana covered the service's metrics. The honest limitation is that this
+        specific failure would not have been caught by them as configured: an idle connection
+        dying looks like a user who stopped working. Catching it would need a synthetic client
+        that connects, goes deliberately quiet past the timeout, and reports whether the stream
+        survived. That is on my list for the platform rather than something I can claim I had
+        running.
+      </p>
+    </div>
+
+    <div class="cs-block">
+      <h2>Result</h2>
+      <ul>
+        <li><strong>Working integrations with Claude Desktop, Cursor and Claude Code</strong>, on whichever transport each one speaks, from one address.</li>
+        <li><strong>Connections survive idle periods</strong>, which is the difference between a tool people keep configured and one they quietly remove.</li>
+        <li><strong>A rule I now apply generally:</strong> anything long-lived behind a proxy gets its keepalive interval checked against that proxy's idle timeout before it ships.</li>
+      </ul>
+    </div>
+
+    <div class="cs-block">
+      <h2>What I would do differently</h2>
+      <p>
+        I would have built the synthetic idle-connection probe first. The fix took an afternoon
+        once the cause was clear; finding the cause took much longer, because the failure was
+        invisible to everything we were measuring. A monitor that deliberately does the thing
+        users do accidentally would have turned a mystery into an alert.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<section class="cs-next">
+  <div class="wrap">
+    <a class="cs-link" href="edge-auth.html">Next: edge-to-service authentication &rarr;</a>
+    <a class="back" style="margin:0" href="../index.html#projects">&larr; Back to all projects</a>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>Aneesh Satheesh &middot; DevOps &amp; Infrastructure Engineer</span>
+    <span><a href="mailto:anzsat21@gmail.com">anzsat21@gmail.com</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
