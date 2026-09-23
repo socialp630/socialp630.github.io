@@ -161,7 +161,7 @@
           <li>Deployed and operated the platform's Model Context Protocol server, running both the legacy SSE transport and the newer Streamable HTTP transport behind one route prefix for Claude Desktop, Cursor and Claude Code clients.</li>
           <li>Traced silent client disconnections to Cloudflare's roughly 100 second idle timeout on proxied connections, and fixed it with a 25 second SSE keepalive.</li>
           <li>Owned the edge and authentication path: Cloudflare in front, Traefik for routing and Let's Encrypt TLS, and ForwardAuth bouncing every protected route to a JWT verifier before it reached an application container.</li>
-          <li>Keyed rate limiting to user ID rather than IP, because Cloudflare collapses many real users behind a handful of shared addresses.</li>
+          <li>Flagged that IP-keyed rate limiting could not work behind Cloudflare, which collapses many real users behind a handful of shared addresses; the limit was moved to user ID.</li>
           <li>Stood up Prometheus and Grafana for platform metrics.</li>
           <li>Reviewed cloud spend monthly and cut idle resources, holding the bill flat as usage grew.</li>
           <li>Fully remote role with a Toronto-based team across time zones, coordinated over Microsoft Teams and Zoom, with decisions and runbooks written down rather than held in a call.</li>
@@ -653,7 +653,7 @@
           </div>
           <div class="pblock">
             <h4>Result</h4>
-            <p>One place where authentication is decided. Rate limiting keyed to user ID rather than IP, because behind Cloudflare an IP-keyed limit throttles a shared address rather than an abuser. Service middleware still repeats the checks, so a proxy misconfiguration is not a single point of failure.</p>
+            <p>One place where authentication is decided. When rate limiting became a problem, I identified that an IP key cannot work behind Cloudflare, since it throttles a shared edge address rather than an abuser, and it was moved to user ID. Service middleware still repeats the checks, so a proxy misconfiguration is not a single point of failure.</p>
           </div>
         </div>
         <div class="project-foot">

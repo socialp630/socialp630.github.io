@@ -44,16 +44,16 @@
     <p class="eyebrow">Case study 02 &middot; Edge and authentication</p>
     <h1>Deciding authentication once, at the proxy</h1>
     <p class="lede">
-      Two client types with nothing in common: people signing in with Google, and programmatic
-      clients holding an API key. One place to decide whether a request gets through, and a
-      deliberate refusal to fully trust that decision.
+      The proxy, edge and TLS layer were mine to configure and operate. The services behind them
+      were not. This is the auth path as I ran it: what I set up, what I only had to understand,
+      and the one call in it that started as a problem I spotted.
     </p>
 
     <div class="cs-facts">
       <div><b>Where</b><span>Rail Tech Inc.</span></div>
       <div><b>When</b><span>2025 &ndash; 2026</span></div>
       <div><b>Scope</b><span>Every protected route on the platform</span></div>
-      <div><b>My role</b><span>Owned the edge and auth path</span></div>
+      <div><b>My role</b><span>Configured and operated the edge and proxy layer</span></div>
       <div><b>Stack</b><span>Traefik v2.11, Cloudflare, Node/Express, Google OAuth, JWT</span></div>
     </div>
   </div>
@@ -161,31 +161,49 @@
       </div>
     </div>
 
-    <div class="cs-block">
-      <h2>Implementation</h2>
+<div class="cs-block">
+      <h2>What I configured, and what I inherited</h2>
+      <p>
+        Worth separating, because the line between the two is exactly the line between
+        infrastructure and application here.
+      </p>
       <ul>
-        <li><strong>ForwardAuth as the gate.</strong> Traefik sends every protected request to the verifier's endpoint first. A 200 lets it continue to the application container; anything else stops it at the proxy. The application containers never see an unauthenticated request on those routes.</li>
-        <li><strong>Two ways in, one token out.</strong> Browser users sign in with Google, their ID token is verified, and they receive a first-party JWT. Programmatic clients exchange an API key for a short-lived JWT. Downstream, both look the same, so nothing behind the proxy needs to know which path a caller came through.</li>
-        <li><strong>Short-lived tokens from long-lived keys.</strong> The API key is the thing a user stores; the JWT is what travels. A leaked token expires on its own, a leaked key can be revoked.</li>
-        <li><strong>Traefik trusts only Cloudflare's ranges</strong> for forwarded headers. Without that, anyone reaching the origin directly could assert whatever client IP they liked, and every decision downstream that uses the client address would be built on a value the caller chose.</li>
-        <li><strong>The MCP route is a deliberate exception,</strong> documented as one. A stream that opens once and lives for hours cannot be re-verified per request, so it validates its bearer token at connection time. The important thing is that this is a decision with a reason, not a gap someone left.</li>
+        <li><strong>Mine:</strong> Traefik routing and Let's Encrypt TLS, wiring ForwardAuth onto every protected route, and configuring Traefik to trust only Cloudflare's published IP ranges for forwarded headers. Without that last one, anyone reaching the origin directly could assert whatever client IP they liked, and every decision downstream that uses the client address would be built on a value the caller chose.</li>
+        <li><strong>Not mine:</strong> the verifier service itself, the token issuing and exchange logic, and the middleware chain inside each service.</li>
       </ul>
+      <p>
+        The shape of the thing: Traefik sends every protected request to the verifier's endpoint
+        before routing it. A 200 lets it continue to the application container; anything else stops
+        it at the proxy. Browser users sign in with Google and receive a first-party JWT;
+        programmatic clients exchange an API key for a short-lived one. Downstream they look the
+        same, so nothing behind the proxy needs to know which path a caller came through.
+      </p>
+      <p>
+        The MCP route is a documented exception. A stream that opens once and lives for hours
+        cannot be re-verified per request, so it validates its bearer token at connection time.
+        Knowing that this is a deliberate difference and not a gap somebody left was part of
+        operating it.
+      </p>
     </div>
 
+
+
     <div class="cs-block">
-      <h2>Defence in depth, and why the duplication is on purpose</h2>
+      <h2>The duplication below the proxy</h2>
       <p>
-        The service middleware repeats work Traefik has already done. The chain runs logging,
-        CORS, security headers, input validation, threat detection, rate limiting, and then JWT
+        The services repeat work Traefik has already done. Their middleware runs logging, CORS,
+        security headers, input validation, threat detection, rate limiting, and then JWT
         verification again, on requests that have already passed ForwardAuth.
       </p>
       <p>
-        That looks redundant and it is, intentionally. The single decision point is the design's
-        strength and its weakness at once: one misconfigured Traefik router, one route added
-        without the middleware attached, and everything behind it is exposed. Re-checking inside
-        the service means a proxy mistake produces a rejected request rather than an open door.
-        The cost is a few microseconds per request. The alternative cost is the whole platform.
+        That is application-side and not my code, but understanding why it is there mattered for
+        running the proxy safely. A single decision point is this design's strength and its
+        weakness at once: one misconfigured router, one route added without the middleware
+        attached, and everything behind it is exposed. The duplication means a proxy mistake
+        produces a rejected request rather than an open door. Knowing that changed how carefully I
+        treated every routing change I made.
       </p>
+    </div>
       <div class="callout">
         <b>The ordering matters</b>
         Cheap rejections come first. There is no point spending a JWT verification on a request
@@ -195,17 +213,23 @@
     </div>
 
     <div class="cs-block">
-      <h2>Rate limiting by user, not by address</h2>
+      <h2>The rate limit that was catching the wrong people</h2>
       <p>
-        The default for rate limiting is to key on IP. Behind Cloudflare that is actively wrong.
-        The edge collapses many real users behind a small set of addresses, so an IP-keyed limit
-        throttles a shared address: the abuser and everyone who happens to exit through the same
-        Cloudflare node.
+        The default for rate limiting is to key on IP. Behind Cloudflare that is actively wrong,
+        and when the problem surfaced I was the one who said so.
       </p>
       <p>
-        Keying on user ID works because, by the time a request has passed ForwardAuth, there is
-        an authenticated identity to key on. The limit then applies to the account doing the
-        work, which is the thing you actually want to limit.
+        The edge collapses many real users behind a small set of addresses, so an IP-keyed limit
+        does not throttle an abuser, it throttles a shared Cloudflare exit address and everyone
+        who happens to be behind it. The fix is to key on something that identifies an account
+        rather than a network path, and by the time a request has passed ForwardAuth there is an
+        authenticated identity available to key on. I raised it; it was implemented as a user-ID
+        key.
+      </p>
+      <p>
+        This is the kind of thing that only shows up once real traffic arrives through a CDN, and
+        it is invisible if you are reasoning about the application in isolation rather than about
+        the whole path a request takes.
       </p>
     </div>
 
@@ -226,10 +250,10 @@
     <div class="cs-block">
       <h2>Result</h2>
       <ul>
-        <li><strong>One place where authentication is decided</strong>, and one service to change when the rules change.</li>
-        <li><strong>Two credential types, one downstream identity</strong>, so services do not carry auth branching.</li>
+        <li><strong>One place where authentication is decided</strong>, enforced at the proxy I configured and maintained.</li>
+        <li><strong>The real client address survives the edge</strong>, so everything downstream that depends on it is built on a value the caller cannot choose.</li>
+        <li><strong>Rate limits land on the right account</strong> rather than on a shared edge address, after I identified why the original key could not work.</li>
         <li><strong>A proxy misconfiguration is not a breach</strong>, because the services still check.</li>
-        <li><strong>Rate limits that land on the right account</strong> instead of on a shared edge address.</li>
       </ul>
     </div>
 
