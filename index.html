@@ -115,7 +115,7 @@
       </div>
       <div class="stat">
         <b>MCP in production</b>
-        <span>Built and ran a Model Context Protocol server serving Claude Desktop, Cursor and Claude Code</span>
+        <span>Ran and debugged a Model Context Protocol server serving Claude Desktop, Cursor and Claude Code</span>
       </div>
       <div class="stat">
         <b>On-call</b>
@@ -158,7 +158,7 @@
         <p class="tl-org">Rail Tech Inc. <em>&middot; full time, AI memory platform</em></p>
         <ul class="tl-body">
           <li>Ran the production infrastructure for an AI memory platform on GCP: four services under Docker Compose on a Compute Engine VM, with MongoDB, Redis and PostgreSQL behind them.</li>
-          <li>Built and operated the platform's Model Context Protocol server, supporting both the legacy SSE transport and the newer Streamable HTTP transport on the same route prefix, for Claude Desktop, Cursor and Claude Code clients.</li>
+          <li>Deployed and operated the platform's Model Context Protocol server, running both the legacy SSE transport and the newer Streamable HTTP transport behind one route prefix for Claude Desktop, Cursor and Claude Code clients.</li>
           <li>Traced silent client disconnections to Cloudflare's roughly 100 second idle timeout on proxied connections, and fixed it with a 25 second SSE keepalive.</li>
           <li>Owned the edge and authentication path: Cloudflare in front, Traefik for routing and Let's Encrypt TLS, and ForwardAuth bouncing every protected route to a JWT verifier before it reached an application container.</li>
           <li>Keyed rate limiting to user ID rather than IP, because Cloudflare collapses many real users behind a handful of shared addresses.</li>
@@ -384,9 +384,10 @@
     </div>
 
     <p class="sk-note">
-      Azure was support-level exposure during the 2016&ndash;2020 hosting years, not ownership.
-      Splunk I used inside an existing setup rather than building out. PostgreSQL I ran in
-      production but did not design the schema for.
+      I deploy, operate and debug services rather than develop them. The code I write is
+      automation: Bash, Python, PowerShell and Ansible. Azure was support-level exposure during
+      the 2016&ndash;2020 hosting years, not ownership. Splunk I used inside an existing setup
+      rather than building out. PostgreSQL I ran in production but did not design the schema for.
     </p>
 
     <div class="learning">
@@ -600,26 +601,26 @@
       <!-- 1 -->
       <article class="project">
         <div class="project-top">
-          <h3>A Model Context Protocol server in production</h3>
+          <h3>Running an MCP server in production behind a CDN</h3>
           <span class="tag tag-pro">Professional</span>
         </div>
         <p class="project-where">Rail Tech Inc. &middot; AI memory platform &middot; 2025&ndash;2026</p>
         <div class="pgrid">
           <div class="pblock">
             <h4>Problem</h4>
-            <p>The platform needed to be reachable from AI coding tools as a first-class integration rather than through a bespoke API each client had to learn. MCP is the emerging standard for that, and it was mid-transition between two transports.</p>
+            <p>Clients connected, worked normally, then stopped receiving anything. No error on either side and no disconnect event the client surfaced. Only restarting the client brought it back, and an active user never hit it, so the pattern took a while to see at all.</p>
           </div>
           <div class="pblock">
             <h4>Approach</h4>
-            <p>Implemented both the legacy SSE transport and the newer Streamable HTTP transport on the same route prefix, so older and newer clients could connect without a separate endpoint or a flag day. Three tools exposed: save, inject and feedback.</p>
+            <p>No error meant it was not the application, so the failure was something in the path closing the socket without telling either end. Split the path: connected directly to the service and left it idle, and the stream held; connected through the CDN and left it idle, and it died. That isolated it to the edge in one test.</p>
           </div>
           <div class="pblock">
             <h4>Technologies &amp; why</h4>
-            <p>Go with the mcp-go library, inside the existing Fiber service so the tools sit next to the retrieval code they call. The MCP server validates its bearer token at connection time rather than through the proxy's ForwardAuth, because a long-lived SSE stream does not fit a per-request auth model.</p>
+            <p>Go and the mcp-go library inside the existing Fiber service, behind Traefik and Cloudflare. I deployed and operated this rather than writing it. What I owned was its runtime behaviour: both transports served behind one route prefix, the token check at connection time that a long-lived stream needs instead of per-request ForwardAuth, and the connection lifetime problem above.</p>
           </div>
           <div class="pblock">
             <h4>Result</h4>
-            <p>Working integrations with Claude Desktop, Cursor and Claude Code. The interesting part was not the protocol, it was the connection lifetime problem behind a CDN, which is in the case study.</p>
+            <p>A 25 second keepalive on the SSE stream, set at roughly a quarter of the timeout window rather than at its edge, so several delayed or lost ticks still leave the connection alive. Stable integrations with Claude Desktop, Cursor and Claude Code.</p>
           </div>
         </div>
         <div class="project-foot">
