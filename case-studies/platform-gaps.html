@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Auditing my own platform — Aneesh Satheesh</title>
-<meta name="description" content="An honest gap analysis of a production system I ran on a single VM with two people, and the migration I would do first.">
+<meta name="description" content="An honest gap analysis of a production system I ran on a single VM, and the migration I would do first.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230e1418'/%3E%3Cpath d='M7 11l5 5-5 5' fill='none' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M15 21h10' stroke='%23e0a458' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,16 +49,14 @@
     <p class="eyebrow">Case study 04 &middot; Analysis, not implementation</p>
     <h1>Auditing a platform I ran, and naming what it did not have</h1>
     <p class="lede">
-      A working production system, built and operated by two people under a funding pause. It
-      served real users for over a year. It also had no CI/CD, no infrastructure as code, and
-      alerting that never reached anyone. This is the inventory, why each gap existed, and
-      what I would fix first.
+      A working production system on a single VM, serving real users for over a year. It also
+      had no CI/CD, no infrastructure as code, and alerting that never reached anyone. This is
+      the inventory, why each gap existed, and what I would fix first.
     </p>
 
     <div class="cs-facts">
       <div><b>Where</b><span>Rail Tech Inc.</span></div>
       <div><b>When</b><span>2024 &ndash; 2026</span></div>
-      <div><b>Team</b><span>Two people</span></div>
       <div><b>Status</b><span>Analysis and design, not built</span></div>
       <div><b>Scope</b><span>One Compute Engine VM, four services</span></div>
     </div>
@@ -121,10 +119,10 @@
     <div class="cs-block">
       <h2>Why the gaps existed</h2>
       <p>
-        Not because nobody knew better. Two people, a funding pause, and a product that had to
-        exist before anything else mattered. Every hour spent on a deployment pipeline was an
-        hour not spent on the thing users were there for, and at that size the manual path is
-        genuinely cheaper right up until the moment it is not.
+        Not because nobody knew better. An early-stage product had to exist before anything else
+        mattered, and every hour spent on a deployment pipeline was an hour not spent on the
+        thing users were there for. At that stage the manual path is genuinely cheaper, right up
+        until the moment it is not.
       </p>
       <p>
         That reasoning is defensible for the first few months. It stops being defensible once the
@@ -211,11 +209,11 @@
     <div class="cs-block">
       <h2>What I would not do</h2>
       <p>
-        <strong>Kubernetes.</strong> Four services on one VM with two engineers is not a
-        Kubernetes problem. Adopting it would add a control plane, a networking model and an
-        upgrade cadence to a team that did not have capacity to wire up an alert receiver. The
-        honest sequence is to fix deployment and observability first, and revisit orchestration
-        when the number of services or the availability requirement actually demands it.
+        <strong>Kubernetes.</strong> Four services on one VM is not a Kubernetes problem.
+        Adopting it would add a control plane, a networking model and an upgrade cadence to a
+        platform whose alert receiver was still a placeholder. The honest sequence is to fix
+        deployment and observability first, and revisit orchestration when the number of
+        services or the availability requirement actually demands it.
       </p>
       <p>
         <strong>Multi-region, or high availability, yet.</strong> A single VM is a real risk, but

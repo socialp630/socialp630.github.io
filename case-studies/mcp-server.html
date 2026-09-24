@@ -207,6 +207,11 @@
         ticks can be delayed or lost and the connection still survives. Setting it at 90 seconds
         would technically satisfy the timeout and would fail the first time anything hiccuped.
       </p>
+      <p>
+        I made that change in the service myself: one ticker and one interval. The number came
+        from the measured timeout rather than from a default, which is the only part of it that
+        needed thinking about.
+      </p>
     </div>
 
     <div class="cs-block">

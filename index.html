@@ -134,7 +134,7 @@
         rotation with out-of-hours pages, Ansible playbooks run against real servers, and the
         Jenkins multibranch pipeline with Ansistrano releases that took deployment out of
         people's heads. At Rail Tech I ran the infrastructure for an AI memory platform on GCP,
-        built its MCP server, and owned the edge and authentication path in front of it. The
+        ran its MCP server, and owned the edge and authentication path in front of it. The
         automation came out of the operations work, not the other way round.
       </p>
     </div>
@@ -627,7 +627,7 @@
           <a class="cs-link" href="case-studies/mcp-server.html">Read the case study
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </a>
-          <span class="project-where" style="margin:0">Go &middot; Fiber &middot; mcp-go &middot; SSE &middot; Streamable HTTP</span>
+          <span class="project-where" style="margin:0">MCP &middot; SSE &middot; Streamable HTTP &middot; Traefik &middot; Cloudflare</span>
         </div>
       </article>
 
@@ -693,7 +693,12 @@
           <a class="cs-link" href="case-studies/release-pipeline.html">Read the case study
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </a>
+          <a class="evidence" href="https://github.com/socialp630/jenkins" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.8.1-.8.1-.8 1.2.1 1.9 1.3 1.9 1.3 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.6 5 18.6 5.3 18.6 5.3c.7 1.7.3 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg>
+            socialp630/jenkins
+          </a>
           <span class="project-where" style="margin:0">Jenkins &middot; Ansistrano &middot; Ansible &middot; Git</span>
+    
         </div>
       </article>
 
@@ -723,9 +728,9 @@
           </div>
         </div>
         <div class="project-foot">
-          <a class="evidence" href="https://github.com/socialp630/linux" target="_blank" rel="noopener">
+          <a class="evidence" href="https://github.com/socialp630/ansible" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.8.1-.8.1-.8 1.2.1 1.9 1.3 1.9 1.3 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.6 5 18.6 5.3 18.6 5.3c.7 1.7.3 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg>
-            socialp630/linux
+            socialp630/ansible
           </a>
           <span class="project-where" style="margin:0">Ansible &middot; CentOS 7 &middot; SSH &middot; sysctl</span>
         </div>
@@ -999,7 +1004,7 @@
 
       <div class="repo">
         <h3><a href="https://github.com/socialp630/mysql" target="_blank" rel="noopener">mysql</a></h3>
-        <p>An annotated <code>my.cnf</code>, key buffer, query cache, table and thread cache and InnoDB tuning notes, slow query log and <code>mysqlcheck</code> maintenance, backup and slow query scripts.</p>
+                <p>A tuned <code>my.cnf</code>, key buffer, query cache, table and thread cache and InnoDB tuning notes, slow query log and <code>mysqlcheck</code> maintenance, backup and slow query scripts.</p>
         <p class="why">Demonstrates: database tuning from the operations side, and finding the query that is actually causing the problem.</p>
       </div>
       <div class="repo">
@@ -1013,16 +1018,34 @@
         <p>A baseline playbook plus nginx, patching and user playbooks, an inventory example, <code>ansible.cfg</code>, and notes on ad-hoc commands and vault.</p>
         <p class="why">Demonstrates: configuration management as I actually ran it, the baseline that stops hosts drifting apart, and keeping secrets out of the playbooks.</p>
       </div>
-      <div class="repo repo-soon">
-        <h3>jenkins</h3>
-        <p>Multibranch setup, a Jenkinsfile, and the Ansistrano deploy flow with the release directory and symlink-swap layout, plus the branching and release plan that went with it.</p>
-        <p class="why">From the 2019 work at Armia. In progress.</p>
+      <div class="repo">
+        <h3><a href="https://github.com/socialp630/jenkins" target="_blank" rel="noopener">jenkins</a></h3>
+        <p>Multibranch setup notes, a Jenkinsfile, the Ansistrano deploy flow with its release directory and symlink-swap layout, and the branching and release plan that went with it.</p>
+        <p class="why">Demonstrates: build and release engineering on conventional server deployments, and why rollback being a symlink swap matters more than deploy speed.</p>
       </div>
-      
+
+      <div class="repo">
+        <h3><a href="https://github.com/socialp630/django" target="_blank" rel="noopener">django</a></h3>
+        <p>Deploying a Django application behind Apache with mod_wsgi on CentOS 7, the vhost that fronts it, and wiring Sentry for error reporting.</p>
+        <p class="why">Demonstrates: putting an application somebody else wrote into production on a conventional stack, which is most of what deployment work actually is.</p>
+      </div>
+
+      <div class="repo">
+        <h3><a href="https://github.com/socialp630/freeipa" target="_blank" rel="noopener">freeipa</a></h3>
+        <p>Setting up FreeIPA replication between servers, including the order of operations and what to check before and after.</p>
+        <p class="why">Demonstrates: centralised identity and directory services on Linux, the open-source counterpart to the Active Directory work in the <code>windows</code> repository.</p>
+      </div>
+
+      <div class="repo">
+        <h3><a href="https://github.com/socialp630/kubernetes" target="_blank" rel="noopener">kubernetes</a></h3>
+        <p>kubeadm cluster install notes, pod, deployment, service, configmap and secret manifests, a troubleshooting guide and a kubectl cheatsheet.</p>
+        <p class="why"><strong>Lab work, not production.</strong> I have not run Kubernetes in a production role, the repository says so, and this is what I am building now.</p>
+      </div>
+
       <div class="repo repo-soon">
-        <h3>docker &middot; kubernetes &middot; monitoring</h3>
-        <p>Dockerfiles and Compose stacks from real work; Kubernetes and observability material from current lab work, clearly marked as such.</p>
-        <p class="why">Mixed. The Docker material is from production; the Kubernetes material is lab work I am doing now and is labelled that way in the repository.</p>
+        <h3>docker &middot; monitoring</h3>
+        <p>Dockerfiles and Compose stacks from real work; Prometheus, Grafana and Nagios install notes and configuration.</p>
+        <p class="why">In progress.</p>
       </div>
 
     </div>
